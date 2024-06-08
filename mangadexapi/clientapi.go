@@ -1,8 +1,10 @@
 package mangadexapi
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -12,10 +14,14 @@ import (
 const (
 	default_useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.3"
 
-	base_url            = "https://api.mangadex.org"
-	health_path         = "/ping"
-	manga_path          = "/manga"
-	specific_manga_path = "/manga/{id}"
+	base_url                   = "https://api.mangadex.org"
+	health_path                = "/ping"
+	manga_path                 = "/manga"
+	specific_manga_path        = "/manga/{id}"
+	manga_feed_path            = "/manga/{id}/feed"
+	chapter_images_path        = "/at-home/server/{id}"
+	download_high_quility_path = "/data/{chapterHash}/{imageFilename}"
+	download_low_quility_path  = "data-saver/{chapterHash}/{imageFilename}"
 )
 
 var (
@@ -177,8 +183,8 @@ type MangaInfoResponse struct {
 	Data     MangaInfo `json:"data"`
 }
 
-func (a clientapi) GetMangaInfo(id string) (MangaInfo, error) {
-	if id == "" {
+func (a clientapi) GetMangaInfo(mangaId string) (MangaInfo, error) {
+	if mangaId == "" {
 		return MangaInfo{}, ErrBadInput
 	}
 
@@ -188,7 +194,7 @@ func (a clientapi) GetMangaInfo(id string) (MangaInfo, error) {
 	resp, err := a.c.R().
 		SetError(&respErr).
 		SetResult(&info).
-		SetPathParam("id", id).
+		SetPathParam("id", mangaId).
 		SetQueryString("includes[]=author&includes[]=artist").
 		Get(specific_manga_path)
 	if err != nil {
@@ -200,4 +206,121 @@ func (a clientapi) GetMangaInfo(id string) (MangaInfo, error) {
 	}
 
 	return info.Data, nil
+}
+
+type Chapter struct {
+	ID            string         `json:"id"`
+	Type          string         `json:"type"`
+	Attributes    ChapterAttr    `json:"attributes"`
+	Relationships []Relationship `json:"relationships"`
+}
+
+type ChapterAttr struct {
+	Volume             string    `json:"volume"`
+	Chapter            string    `json:"chapter"`
+	Title              string    `json:"title"`
+	TranslatedLanguage string    `json:"translatedLanguage"`
+	ExternalUrl        string    `json:"externalUrl"`
+	PublishAt          time.Time `json:"publishAt"`
+	ReadableAt         time.Time `json:"readableAt"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
+	Pages              int       `json:"pages"`
+	Version            int       `json:"version"`
+}
+
+type ResponseChapterList struct {
+	Result   string    `json:"result"`
+	Response string    `json:"response"`
+	Data     []Chapter `json:"data"`
+	Limit    int       `json:"limit"`
+	Offset   int       `json:"offset"`
+	Total    int       `json:"total"`
+}
+
+func (a clientapi) GetChaptersList(mangaId, language string) (ResponseChapterList, error) {
+	if mangaId == "" {
+		return ResponseChapterList{}, ErrBadInput
+	}
+
+	list := ResponseChapterList{}
+	respErr := ErrorResponse{}
+
+	query := fmt.Sprintf("limit=15&order[chapter]=asc&translatedLanguage[]=%s", language)
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&list).
+		SetPathParam("id", mangaId).
+		SetQueryString(query).
+		Get(manga_feed_path)
+	if err != nil {
+		return ResponseChapterList{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return ResponseChapterList{}, &respErr
+	}
+
+	return list, nil
+}
+
+type ChapterData struct {
+	Hash      string   `json:"hash"`
+	Data      []string `json:"data"`
+	DataSaver []string `json:"dataSaver"`
+}
+
+type ResponseChapterImages struct {
+	Result  string      `json:"result"`
+	BaseURL string      `json:"baseUrl"`
+	Chapter ChapterData `json:"chapter"`
+}
+
+func (a clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages, error) {
+	if chapterId == "" {
+		return ResponseChapterImages{}, ErrBadInput
+	}
+
+	list := ResponseChapterImages{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&list).
+		SetPathParam("id", chapterId).
+		Get(chapter_images_path)
+	if err != nil {
+		return ResponseChapterImages{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return ResponseChapterImages{}, &respErr
+	}
+
+	return list, nil
+}
+
+func DownloadImage(baseUrl, chapterHash, imageFilename string) (io.Reader, error) {
+	if baseUrl == "" || chapterHash == "" || imageFilename == "" {
+		return nil, ErrBadInput
+	}
+
+	resp, err := resty.New().
+		SetBaseURL(baseUrl).
+		R().
+		SetPathParams(map[string]string{
+			"chapterHash":   chapterHash,
+			"imageFilename": imageFilename,
+		}).
+		Get(download_high_quility_path)
+	if err != nil {
+		return nil, ErrConnection
+	}
+
+	if resp.IsError() {
+		return nil, ErrUnknown
+	}
+
+	return bytes.NewBuffer(resp.Body()), nil
 }
