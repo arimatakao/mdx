@@ -12,3 +12,4 @@ This project uses the following third-party libraries:
 
 - Cobra (https://github.com/spf13/cobra) - Licensed under the Apache License 2.0
 - Resty (https://github.com/go-resty/resty) - Licensed under the MIT
+- PTerm (https://github.com/pterm/pterm) - Licensed under the MIT
