@@ -12,9 +12,10 @@ import (
 const (
 	default_useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.3"
 
-	base_url    = "https://api.mangadex.org"
-	health_path = "/ping"
-	manga_path  = "/manga"
+	base_url            = "https://api.mangadex.org"
+	health_path         = "/ping"
+	manga_path          = "/manga"
+	specific_manga_path = "/manga/{id}"
 )
 
 var (
@@ -115,15 +116,22 @@ type MangaAttrib struct {
 	LatestUploadedChapter          string              `json:"latestUploadedChapter"`
 }
 
+type RelAttribute struct {
+	Name string `json:"name"`
+}
+
+type Relationship struct {
+	ID         string       `json:"id"`
+	Type       string       `json:"type"`
+	Related    string       `json:"related,omitempty"`
+	Attributes RelAttribute `json:"attributes"`
+}
+
 type MangaInfo struct {
-	ID            string      `json:"id"`
-	Type          string      `json:"type"`
-	Attributes    MangaAttrib `json:"attributes"`
-	Relationships []struct {
-		ID      string `json:"id"`
-		Type    string `json:"type"`
-		Related string `json:"related,omitempty"`
-	} `json:"relationships"`
+	ID            string         `json:"id"`
+	Type          string         `json:"type"`
+	Attributes    MangaAttrib    `json:"attributes"`
+	Relationships []Relationship `json:"relationships"`
 }
 
 type MangaList struct {
@@ -144,7 +152,7 @@ func (a clientapi) Find(title, limit, offset string) (MangaList, error) {
 	respErr := ErrorResponse{}
 
 	resp, err := a.c.R().
-		SetError(respErr).
+		SetError(&respErr).
 		SetResult(&mangaList).
 		SetQueryParams(map[string]string{
 			"title":  title,
@@ -161,4 +169,35 @@ func (a clientapi) Find(title, limit, offset string) (MangaList, error) {
 	}
 
 	return mangaList, nil
+}
+
+type MangaInfoResponse struct {
+	Result   string    `json:"result"`
+	Response string    `json:"response"`
+	Data     MangaInfo `json:"data"`
+}
+
+func (a clientapi) GetMangaInfo(id string) (MangaInfo, error) {
+	if id == "" {
+		return MangaInfo{}, ErrBadInput
+	}
+
+	info := MangaInfoResponse{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&info).
+		SetPathParam("id", id).
+		SetQueryString("includes[]=author&includes[]=artist").
+		Get(specific_manga_path)
+	if err != nil {
+		return MangaInfo{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return MangaInfo{}, &respErr
+	}
+
+	return info.Data, nil
 }
