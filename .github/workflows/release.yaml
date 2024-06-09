@@ -2,6 +2,10 @@ on:
   release:
     types: [created]
 
+permissions:
+    contents: write
+    packages: write
+
 jobs:
   releases-matrix:
     name: Release Go Binary
@@ -9,13 +13,20 @@ jobs:
     strategy:
       matrix:
         goos: [linux, windows, darwin]
-        goarch: ["386", amd64]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: arm64
+            goos: windows
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.3
+    - uses: actions/checkout@v4
+    - uses: wangyoucao577/go-release-action@v1.50
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         goversion: "1.22.4"
-        pre_command: "go mod tidy"
+        project_path: "./"
+        binary_name: "mdx"
+        extra_files: LICENSE README.md
