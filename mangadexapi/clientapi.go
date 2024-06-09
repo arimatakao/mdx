@@ -211,9 +211,10 @@ func (a clientapi) Find(title, limit, offset string) (ResponseMangaList, error) 
 		SetError(&respErr).
 		SetResult(&mangaList).
 		SetQueryParams(map[string]string{
-			"title":  title,
-			"limit":  limit,
-			"offset": offset,
+			"title":            title,
+			"limit":            limit,
+			"offset":           offset,
+			"order[relevance]": "asc",
 		}).
 		Get(manga_path)
 	if err != nil {
