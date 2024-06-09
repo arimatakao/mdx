@@ -432,7 +432,8 @@ func (a clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages,
 	return list, nil
 }
 
-func DownloadImage(baseUrl, chapterHash, imageFilename string, isJpg bool) (io.Reader, error) {
+func (a clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
+	isJpg bool) (io.Reader, error) {
 	if baseUrl == "" || chapterHash == "" || imageFilename == "" {
 		return nil, ErrBadInput
 	}
@@ -444,7 +445,7 @@ func DownloadImage(baseUrl, chapterHash, imageFilename string, isJpg bool) (io.R
 
 	respErr := ErrorResponse{}
 
-	resp, err := newClient(baseUrl, "").
+	resp, err := a.c.SetBaseURL(baseUrl).
 		R().
 		SetError(respErr).
 		SetPathParams(map[string]string{

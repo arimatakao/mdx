@@ -181,9 +181,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		image, err := mangadexapi.
-			DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName,
-				isJpgFileFormat)
+		image, err := c.DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName,
+			isJpgFileFormat)
 		if err != nil {
 			dlbar.Increment()
 			fmt.Printf("\nfailed to download image: %v\n", err)
