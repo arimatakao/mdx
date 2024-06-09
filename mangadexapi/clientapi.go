@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -147,6 +148,46 @@ type MangaInfo struct {
 	Type          string         `json:"type"`
 	Attributes    MangaAttrib    `json:"attributes"`
 	Relationships []Relationship `json:"relationships"`
+}
+
+func (mi MangaInfo) GetAuthors() string {
+	authors := []string{}
+	for _, relation := range mi.Relationships {
+		if relation.Type == "author" {
+			authors = append(authors, relation.Attributes.Name)
+		}
+	}
+	return strings.Join(authors, ", ")
+}
+
+func (mi MangaInfo) GetArtists() string {
+	artists := []string{}
+	for _, relation := range mi.Relationships {
+		if relation.Type == "artist" {
+			artists = append(artists, relation.Attributes.Name)
+		}
+	}
+	return strings.Join(artists, ", ")
+}
+
+func (mi MangaInfo) GetTags() string {
+	tags := []string{}
+	for _, tagEntity := range mi.Attributes.Tags {
+		if tagEntity.Type == "tag" {
+			tags = append(tags, tagEntity.Attributes.Name["en"])
+		}
+	}
+	return strings.Join(tags, ", ")
+}
+
+func (mi MangaInfo) GetAltTitles() string {
+	altTitles := []string{}
+	for _, m := range mi.Attributes.AltTitles {
+		for language, title := range m {
+			altTitles = append(altTitles, fmt.Sprintf("%s (%s)", title, language))
+		}
+	}
+	return strings.Join(altTitles, " | ")
 }
 
 type ResponseMangaList struct {

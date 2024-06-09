@@ -54,41 +54,13 @@ func getInfo(cmd *cobra.Command, args []string) {
 	}
 	spinner.Success("Fetched info")
 
-	altTitles := []string{}
-	for _, m := range info.Attributes.AltTitles {
-		for language, title := range m {
-			altTitles = append(altTitles, fmt.Sprintf("%s (%s)", title, language))
-		}
-	}
-	joinedAltTitles := strings.Join(altTitles, " | ")
-
-	tags := []string{}
-	for _, tagEntity := range info.Attributes.Tags {
-		if tagEntity.Type == "tag" {
-			tags = append(tags, tagEntity.Attributes.Name["en"])
-		}
-	}
-	joinedTags := strings.Join(tags, ", ")
-
-	authors := []string{}
-	artists := []string{}
-	for _, relation := range info.Relationships {
-		if relation.Type == "author" {
-			authors = append(authors, relation.Attributes.Name)
-		} else if relation.Type == "artist" {
-			artists = append(artists, relation.Attributes.Name)
-		}
-	}
-	joinedAuthors := strings.Join(authors, ", ")
-	joinedArtists := strings.Join(artists, ", ")
-
 	fmt.Println("Title: ", info.Attributes.Title["en"])
-	fmt.Printf("Alternative titles: %s\n", joinedAltTitles)
+	fmt.Printf("Alternative titles: %s\n", info.GetAltTitles())
 	fmt.Println("Type: ", info.Type)
-	fmt.Println("Authors: ", joinedAuthors)
-	fmt.Println("Artists: ", joinedArtists)
+	fmt.Println("Authors: ", info.GetAuthors())
+	fmt.Println("Artists: ", info.GetArtists())
 	fmt.Printf("Year: %d\n", info.Attributes.Year)
-	fmt.Printf("Tags: %s\n", joinedTags)
+	fmt.Printf("Tags: %s\n", info.GetTags())
 	fmt.Println("Status: ", info.Attributes.Status)
 	fmt.Println("Last chapter: ", info.Attributes.LastChapter)
 	fmt.Println("Original language: ", info.Attributes.OriginalLanguage)
