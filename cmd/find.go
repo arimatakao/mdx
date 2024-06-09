@@ -11,10 +11,11 @@ import (
 
 var (
 	findCmd = &cobra.Command{
-		Use:   "find",
-		Short: "Find manga",
-		Long:  "Search and print manga info",
-		Run:   find,
+		Use:     "find",
+		Aliases: []string{"f", "search"},
+		Short:   "Find manga",
+		Long:    "Search and print manga info",
+		Run:     find,
 	}
 	title string
 )
@@ -22,10 +23,10 @@ var (
 func init() {
 	rootCmd.AddCommand(findCmd)
 
-	findCmd.PersistentFlags().StringVarP(&title,
+	findCmd.Flags().StringVarP(&title,
 		"title", "t", "", "specifies the title of the manga to search for")
 
-	findCmd.MarkPersistentFlagRequired("title")
+	findCmd.MarkFlagRequired("title")
 }
 
 func find(cmd *cobra.Command, args []string) {
@@ -36,7 +37,7 @@ func find(cmd *cobra.Command, args []string) {
 	response, err := c.Find(title, "15", "0")
 	if err != nil {
 		spinner.Fail("Failed to search manga")
-		fmt.Printf("Error while search manga: %v", err)
+		fmt.Printf("error while search manga: %v\n", err)
 		os.Exit(1)
 	}
 

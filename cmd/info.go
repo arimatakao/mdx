@@ -13,9 +13,10 @@ import (
 
 var (
 	infoCmd = &cobra.Command{
-		Use:   "info",
-		Short: "Print detailed information about manga",
-		Run:   getInfo,
+		Use:     "info",
+		Aliases: []string{"list"},
+		Short:   "Print detailed information about manga",
+		Run:     getInfo,
 	}
 	mangaurl string
 )
@@ -23,21 +24,20 @@ var (
 func init() {
 	rootCmd.AddCommand(infoCmd)
 
-	infoCmd.PersistentFlags().StringVarP(&mangaurl,
-		"url", "u", "", "specify the URL for the manga")
+	infoCmd.Flags().StringVarP(&mangaurl, "url", "u", "", "specify the URL for the manga")
 
-	infoCmd.MarkPersistentFlagRequired("url")
+	infoCmd.MarkFlagRequired("url")
 }
 
 func getInfo(cmd *cobra.Command, args []string) {
 	parsedUrl, err := url.Parse(mangaurl)
 	if err != nil {
-		fmt.Println("error: Malfomated URL")
+		fmt.Println("error: Malformated URL")
 		os.Exit(1)
 	}
 	paths := strings.Split(parsedUrl.Path, "/")
 	if len(paths) < 3 {
-		fmt.Println("error: Malfomated URL")
+		fmt.Println("error: Malformated URL")
 		os.Exit(1)
 	}
 
@@ -49,7 +49,7 @@ func getInfo(cmd *cobra.Command, args []string) {
 	info, err := c.GetMangaInfo(mangaid)
 	if err != nil {
 		spinner.Fail("Failed to fetch manga info")
-		fmt.Printf("error while getting info: %v", err)
+		fmt.Printf("error while getting info: %v\n", err)
 		os.Exit(1)
 	}
 	spinner.Success("Fetched info")

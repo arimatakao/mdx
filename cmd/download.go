@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
@@ -30,29 +29,29 @@ var (
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
-	downloadCmd.PersistentFlags().StringVarP(&mangaurldl,
+	downloadCmd.Flags().StringVarP(&mangaurldl,
 		"url", "u", "", "specify the URL for the manga")
-	downloadCmd.PersistentFlags().StringVarP(&outputFile,
+	downloadCmd.Flags().StringVarP(&outputFile,
 		"output", "o", "", "specify output cbz file of manga")
-	downloadCmd.PersistentFlags().StringVarP(&language,
+	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
-	downloadCmd.PersistentFlags().StringVarP(&chapter,
+	downloadCmd.Flags().StringVarP(&chapter,
 		"chapter", "c", "1", "specify chapter")
 
-	downloadCmd.MarkPersistentFlagRequired("url")
-	downloadCmd.MarkPersistentFlagRequired("output")
+	downloadCmd.MarkFlagRequired("url")
+	downloadCmd.MarkFlagRequired("output")
 }
 
 func downloadManga(cmd *cobra.Command, args []string) {
 	parsedUrl, err := url.Parse(mangaurldl)
 	if err != nil {
-		fmt.Println("error: Malfomated URL")
+		fmt.Println("error: Malformated URL")
 		os.Exit(1)
 	}
 
 	paths := strings.Split(parsedUrl.Path, "/")
 	if len(paths) < 3 {
-		fmt.Println("error: Malfomated URL")
+		fmt.Println("error: Malformated URL")
 		os.Exit(1)
 	}
 
@@ -90,7 +89,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	}
 	archive, err := os.Create(outputFile)
 	if err != nil {
-		fmt.Printf("error while creating arhive: %v", err)
+		fmt.Printf("error while creating arhive: %v\n", err)
 		os.Exit(1)
 	}
 	defer archive.Close()
@@ -102,7 +101,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
 	for i, fileName := range imageList.Chapter.Data {
-		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.jpg",
+		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.png",
 			strings.ReplaceAll(mangaTitle, " ", "_"),
 			list.Data[0].Attributes.Volume,
 			list.Data[0].Attributes.Chapter,
@@ -118,15 +117,14 @@ func downloadManga(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		time.Sleep(time.Millisecond * 200)
-
 		image, err := mangadexapi.
-			DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName)
+			DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName, false)
 		if err != nil {
 			dlbar.Increment()
 			fmt.Printf("\nfailed to download image: %v\n", err)
 			continue
 		}
+
 		if _, err := io.Copy(w, image); err != nil {
 			dlbar.Increment()
 			fmt.Printf("\nfailed to copy image in archive: %v\n", err)

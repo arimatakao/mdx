@@ -21,7 +21,7 @@ const (
 	manga_feed_path            = "/manga/{id}/feed"
 	chapter_images_path        = "/at-home/server/{id}"
 	download_high_quility_path = "/data/{chapterHash}/{imageFilename}"
-	download_low_quility_path  = "data-saver/{chapterHash}/{imageFilename}"
+	download_low_quility_path  = "/data-saver/{chapterHash}/{imageFilename}"
 )
 
 var (
@@ -45,14 +45,13 @@ type ErrorResponse struct {
 
 func (e *ErrorResponse) Error() string {
 	errorMsg := fmt.Sprintf("result: %s ; errors: [", e.Result)
-
 	for i, err := range e.Errors {
-		errorMsg += fmt.Sprintf("{id: %s, status: %d, title: %s, detail: %s, context: %s}", err.ID, err.Status, err.Title, err.Detail, err.Context)
+		errorMsg += fmt.Sprintf("{id: %s, status: %d, title: %s, detail: %s, context: %s}",
+			err.ID, err.Status, err.Title, err.Detail, err.Context)
 		if i < len(e.Errors)-1 {
 			errorMsg += ", "
 		}
 	}
-
 	errorMsg += "]"
 
 	return errorMsg
@@ -62,13 +61,23 @@ type clientapi struct {
 	c *resty.Client
 }
 
-func NewClient(userAgent string) clientapi {
+func newClient(baseUrl, userAgent string) *resty.Client {
+	if baseUrl == "" {
+		baseUrl = base_url
+	}
 	if userAgent == "" {
 		userAgent = default_useragent
 	}
-	c := resty.New().
-		SetBaseURL(base_url).
+
+	return resty.New().
+		SetRetryCount(5).
+		SetRetryWaitTime(time.Millisecond*500).
+		SetBaseURL(baseUrl).
 		SetHeader("User-Agent", userAgent)
+}
+
+func NewClient(userAgent string) clientapi {
+	c := newClient("", "")
 	return clientapi{
 		c: c,
 	}
@@ -140,7 +149,7 @@ type MangaInfo struct {
 	Relationships []Relationship `json:"relationships"`
 }
 
-type MangaList struct {
+type ResponseMangaList struct {
 	Result   string      `json:"result"`
 	Response string      `json:"response"`
 	Data     []MangaInfo `json:"data"`
@@ -149,12 +158,12 @@ type MangaList struct {
 	Total    int         `json:"total"`
 }
 
-func (a clientapi) Find(title, limit, offset string) (MangaList, error) {
+func (a clientapi) Find(title, limit, offset string) (ResponseMangaList, error) {
 	if title == "" || limit == "" || offset == "" {
-		return MangaList{}, ErrBadInput
+		return ResponseMangaList{}, ErrBadInput
 	}
 
-	mangaList := MangaList{}
+	mangaList := ResponseMangaList{}
 	respErr := ErrorResponse{}
 
 	resp, err := a.c.R().
@@ -167,11 +176,11 @@ func (a clientapi) Find(title, limit, offset string) (MangaList, error) {
 		}).
 		Get(manga_path)
 	if err != nil {
-		return MangaList{}, ErrConnection
+		return ResponseMangaList{}, ErrConnection
 	}
 
 	if resp.IsError() {
-		return MangaList{}, &respErr
+		return ResponseMangaList{}, &respErr
 	}
 
 	return mangaList, nil
@@ -246,7 +255,8 @@ func (a clientapi) GetChaptersList(mangaId, language string) (ResponseChapterLis
 	list := ResponseChapterList{}
 	respErr := ErrorResponse{}
 
-	query := fmt.Sprintf("limit=15&order[chapter]=asc&translatedLanguage[]=%s", language)
+	query := fmt.Sprintf(
+		"limit=15&order[volume]=asc&order[chapter]=asc&translatedLanguage[]=%s", language)
 
 	resp, err := a.c.R().
 		SetError(&respErr).
@@ -301,25 +311,32 @@ func (a clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages,
 	return list, nil
 }
 
-func DownloadImage(baseUrl, chapterHash, imageFilename string) (io.Reader, error) {
+func DownloadImage(baseUrl, chapterHash, imageFilename string, isJpg bool) (io.Reader, error) {
 	if baseUrl == "" || chapterHash == "" || imageFilename == "" {
 		return nil, ErrBadInput
 	}
 
-	resp, err := resty.New().
-		SetBaseURL(baseUrl).
+	path := download_high_quility_path
+	if isJpg {
+		path = download_low_quility_path
+	}
+
+	respErr := ErrorResponse{}
+
+	resp, err := newClient(baseUrl, "").
 		R().
+		SetError(respErr).
 		SetPathParams(map[string]string{
 			"chapterHash":   chapterHash,
 			"imageFilename": imageFilename,
 		}).
-		Get(download_high_quility_path)
+		Get(path)
 	if err != nil {
 		return nil, ErrConnection
 	}
 
 	if resp.IsError() {
-		return nil, ErrUnknown
+		return nil, &respErr
 	}
 
 	return bytes.NewBuffer(resp.Body()), nil
