@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/arimatakao/mdx/mangadexapi"
@@ -24,7 +25,7 @@ var (
 	mangaurldl string
 	outputDir  string
 	language   string
-	chapter    string
+	chapter    int
 )
 
 func init() {
@@ -36,8 +37,8 @@ func init() {
 		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
-	downloadCmd.Flags().StringVarP(&chapter,
-		"chapter", "c", "1", "specify chapter")
+	downloadCmd.Flags().IntVarP(&chapter,
+		"chapter", "c", 1, "specify chapter")
 
 	downloadCmd.MarkFlagRequired("url")
 }
@@ -57,35 +58,59 @@ func downloadManga(cmd *cobra.Command, args []string) {
 
 	mangaId := paths[2]
 
+	if chapter < 0 {
+		fmt.Println("error: Malformated chapter")
+		os.Exit(1)
+	}
+
+	if chapter != 0 {
+		chapter -= 1
+	}
+
 	c := mangadexapi.NewClient("")
 
+	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
 	mangaInfo, err := c.GetMangaInfo(mangaId)
 	if err != nil {
+		spinnerMangaInfo.Fail("Failed to get manga info")
 		fmt.Printf("error while getting manga info: %v\n", err)
 		os.Exit(1)
 	}
 	mangaTitle := mangaInfo.Attributes.Title["en"]
+	spinnerMangaInfo.Success("Fetched manga info")
 
-	spinner, _ := pterm.DefaultSpinner.Start("Fetching chapter...")
-	list, err := c.GetChaptersList(mangaId, language)
-	if err != nil {
-		spinner.Fail("Failed to fetch manga chapters")
-		fmt.Printf("error while getting chapters: %v\n", err)
-		os.Exit(1)
+	chapterList := mangadexapi.ResponseChapterList{}
+	spinnerChInfo, _ := pterm.DefaultSpinner.Start("Fetching manga chapter...")
+	for i := 0; ; i++ {
+		chapterList, err = c.
+			GetChaptersList("1", strconv.Itoa(chapter+i), mangaId, language)
+		if err != nil {
+			spinnerChInfo.Fail("Failed to fetch manga chapters")
+			fmt.Printf("error while getting chapters: %v\n", err)
+			os.Exit(1)
+		}
+
+		if len(chapterList.Data) != 1 {
+			fmt.Println("no chapters to download")
+			os.Exit(1)
+		}
+
+		checkChapter, _ := strconv.Atoi(chapterList.Data[0].Attributes.Chapter)
+		if checkChapter > chapter+1 {
+			fmt.Println("no chapters to download")
+			os.Exit(1)
+		}
+		if checkChapter == chapter+1 {
+			break
+		}
 	}
-	spinner.Success("Fetched chapters")
+	spinnerChInfo.Success("Fetched manga chapters")
 
-	mangaChapter := list.Data[0].Attributes.Chapter
-	mangaVolume := list.Data[0].Attributes.Volume
+	mangaChapter := chapterList.Data[0].Attributes.Chapter
+	mangaVolume := chapterList.Data[0].Attributes.Volume
+	downloadedChapterId := chapterList.Data[0].ID
 
-	if len(list.Data) == 0 {
-		fmt.Println("no chapters to download")
-		os.Exit(1)
-	}
-
-	firstChapterId := list.Data[0].ID
-
-	imageList, err := c.GetChapterImageList(firstChapterId)
+	imageList, err := c.GetChapterImageList(downloadedChapterId)
 	if err != nil {
 		fmt.Printf("error while getting images of chapter: %v\n", err)
 		os.Exit(1)
@@ -118,8 +143,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 			mangaChapter,
 			i+1)
 
-		barTitle := fmt.Sprintf("Downloading %s", insideFilename)
-		dlbar.UpdateTitle(barTitle)
+		dlbar.UpdateTitle("Downloading " + insideFilename)
 
 		w, err := zipWriter.Create(insideFilename)
 		if err != nil {

@@ -72,7 +72,7 @@ func newClient(baseUrl, userAgent string) *resty.Client {
 
 	return resty.New().
 		SetRetryCount(5).
-		SetRetryWaitTime(time.Millisecond*500).
+		SetRetryWaitTime(time.Millisecond*200).
 		SetBaseURL(baseUrl).
 		SetHeader("User-Agent", userAgent)
 }
@@ -289,7 +289,8 @@ type ResponseChapterList struct {
 	Total    int       `json:"total"`
 }
 
-func (a clientapi) GetChaptersList(mangaId, language string) (ResponseChapterList, error) {
+func (a clientapi) GetChaptersList(limit, offset, mangaId, language string) (ResponseChapterList,
+	error) {
 	if mangaId == "" {
 		return ResponseChapterList{}, ErrBadInput
 	}
@@ -298,7 +299,8 @@ func (a clientapi) GetChaptersList(mangaId, language string) (ResponseChapterLis
 	respErr := ErrorResponse{}
 
 	query := fmt.Sprintf(
-		"limit=15&order[volume]=asc&order[chapter]=asc&translatedLanguage[]=%s", language)
+		"limit=%s&offset=%s&order[volume]=asc&order[chapter]=asc&translatedLanguage[]=%s",
+		limit, offset, language)
 
 	resp, err := a.c.R().
 		SetError(&respErr).
