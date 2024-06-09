@@ -52,15 +52,7 @@ func find(cmd *cobra.Command, args []string) {
 
 	for _, m := range response.Data {
 		fmt.Println("------------------------------")
-		fmt.Println("Title: ", m.Attributes.Title["en"])
-		fmt.Println("Type: ", m.Type)
-		fmt.Printf("Year: %d\n", m.Attributes.Year)
-		fmt.Println("Last chapter: ", m.Attributes.LastChapter)
-		fmt.Println("Status: ", m.Attributes.Status)
-		fmt.Printf("Translated: %v\n", m.Attributes.AvailableTranslatedLanguages)
-		fmt.Printf("Link: https://mangadex.org/title/%s\n", m.ID)
-		fmt.Println("Description:")
-		fmt.Println(m.Attributes.Description["en"])
+		printMangaInfo(m)
 	}
 
 	printedCount, _ := strconv.Atoi("25")

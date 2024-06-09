@@ -133,7 +133,8 @@ type MangaAttrib struct {
 }
 
 type RelAttribute struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type Relationship struct {
@@ -289,8 +290,84 @@ type ResponseChapterList struct {
 	Total    int       `json:"total"`
 }
 
-func (a clientapi) GetChaptersList(limit, offset, mangaId, language string) (ResponseChapterList,
-	error) {
+func (l ResponseChapterList) FirstID() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+	return l.Data[0].ID
+}
+
+func (l ResponseChapterList) FirstChapter() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+	return l.Data[0].Attributes.Chapter
+}
+
+func (l ResponseChapterList) FirstVolume() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+	return l.Data[0].Attributes.Volume
+}
+
+func (l ResponseChapterList) IsTranslateGroup(translateGroup string) bool {
+	if len(l.Data) == 0 {
+		return false
+	}
+
+	for _, rel := range l.Data[0].Relationships {
+		if rel.Type == "scanlation_group" &&
+			strings.Contains(rel.Attributes.Name, translateGroup) {
+			return true
+		}
+	}
+	return false
+}
+
+func (l ResponseChapterList) FirstTranslateGroup() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+
+	for _, rel := range l.Data[0].Relationships {
+		if rel.Type == "scanlation_group" {
+			return rel.Attributes.Name
+		}
+	}
+	return ""
+}
+
+func (l ResponseChapterList) FirstTranslateGroupDescription() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+
+	for _, rel := range l.Data[0].Relationships {
+		if rel.Type == "scanlation_group" {
+			return rel.Attributes.Description
+		}
+	}
+	return ""
+}
+
+func (l ResponseChapterList) FirstTranslationLanguage() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+	return l.Data[0].Attributes.TranslatedLanguage
+}
+
+func (l ResponseChapterList) FirstChapterPages() int {
+	if len(l.Data) == 0 {
+		return 0
+	}
+	return l.Data[0].Attributes.Pages
+}
+
+func (a clientapi) GetChaptersList(limit, offset, mangaId,
+	language string) (ResponseChapterList, error) {
+
 	if mangaId == "" {
 		return ResponseChapterList{}, ErrBadInput
 	}
@@ -299,7 +376,7 @@ func (a clientapi) GetChaptersList(limit, offset, mangaId, language string) (Res
 	respErr := ErrorResponse{}
 
 	query := fmt.Sprintf(
-		"limit=%s&offset=%s&order[volume]=asc&order[chapter]=asc&translatedLanguage[]=%s",
+		"limit=%s&offset=%s&translatedLanguage[]=%s&includes[]=scanlation_group&order[volume]=asc&order[chapter]=asc",
 		limit, offset, language)
 
 	resp, err := a.c.R().

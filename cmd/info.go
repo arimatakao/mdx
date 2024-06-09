@@ -33,12 +33,12 @@ func getInfo(cmd *cobra.Command, args []string) {
 	parsedUrl, err := url.Parse(mangaurl)
 	if err != nil {
 		fmt.Println("error: Malformated URL")
-		os.Exit(1)
+		os.Exit(0)
 	}
 	paths := strings.Split(parsedUrl.Path, "/")
 	if len(paths) < 3 {
 		fmt.Println("error: Malformated URL")
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	mangaid := paths[2]
@@ -53,19 +53,22 @@ func getInfo(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	spinner.Success("Fetched info")
+	printMangaInfo(info)
+}
 
-	fmt.Println("Title: ", info.Attributes.Title["en"])
-	fmt.Printf("Alternative titles: %s\n", info.GetAltTitles())
-	fmt.Println("Type: ", info.Type)
-	fmt.Println("Authors: ", info.GetAuthors())
-	fmt.Println("Artists: ", info.GetArtists())
-	fmt.Printf("Year: %d\n", info.Attributes.Year)
-	fmt.Printf("Tags: %s\n", info.GetTags())
-	fmt.Println("Status: ", info.Attributes.Status)
-	fmt.Println("Last chapter: ", info.Attributes.LastChapter)
-	fmt.Println("Original language: ", info.Attributes.OriginalLanguage)
-	fmt.Printf("Translated: %v\n", info.Attributes.AvailableTranslatedLanguages)
-	fmt.Printf("Link: https://mangadex.org/title/%s\n", info.ID)
+func printMangaInfo(i mangadexapi.MangaInfo) {
+	fmt.Println("Title: ", i.Attributes.Title["en"])
+	fmt.Printf("Alternative titles: %s\n", i.GetAltTitles())
+	fmt.Println("Type: ", i.Type)
+	fmt.Println("Authors: ", i.GetAuthors())
+	fmt.Println("Artists: ", i.GetArtists())
+	fmt.Printf("Year: %d\n", i.Attributes.Year)
+	fmt.Printf("Tags: %s\n", i.GetTags())
+	fmt.Println("Status: ", i.Attributes.Status)
+	fmt.Println("Last chapter: ", i.Attributes.LastChapter)
+	fmt.Println("Original language: ", i.Attributes.OriginalLanguage)
+	fmt.Printf("Translated: %v\n", i.Attributes.AvailableTranslatedLanguages)
+	fmt.Printf("Link: https://mangadex.org/title/%s\n", i.ID)
 	fmt.Println("Description:")
-	fmt.Println(info.Attributes.Description["en"])
+	fmt.Println(i.Attributes.Description["en"])
 }

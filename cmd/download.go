@@ -22,21 +22,27 @@ var (
 		Short:   "Download manga by URL",
 		Run:     downloadManga,
 	}
-	mangaurldl string
-	outputDir  string
-	language   string
-	chapter    int
+	isJpgFileFormat bool
+	mangaurldl      string
+	outputDir       string
+	language        string
+	translateGroup  string
+	chapter         int
 )
 
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
+	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
+		"jpg", "j", false, "download compressed images for small archive size (default: false)")
 	downloadCmd.Flags().StringVarP(&mangaurldl,
 		"url", "u", "", "specify the URL for the manga")
 	downloadCmd.Flags().StringVarP(&outputDir,
 		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
+	downloadCmd.Flags().StringVarP(&translateGroup,
+		"translated-by", "t", "", "specify part of name translation group")
 	downloadCmd.Flags().IntVarP(&chapter,
 		"chapter", "c", 1, "specify chapter")
 
@@ -67,6 +73,11 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		chapter -= 1
 	}
 
+	imgExt := "png"
+	if isJpgFileFormat {
+		imgExt = "jpg"
+	}
+
 	c := mangadexapi.NewClient("")
 
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
@@ -83,32 +94,36 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	spinnerChInfo, _ := pterm.DefaultSpinner.Start("Fetching manga chapter...")
 	for i := 0; ; i++ {
 		chapterList, err = c.
-			GetChaptersList("1", strconv.Itoa(chapter+i), mangaId, language)
+			GetChaptersList("1", strconv.Itoa(chapter+i),
+				mangaId, language)
 		if err != nil {
 			spinnerChInfo.Fail("Failed to fetch manga chapters")
 			fmt.Printf("error while getting chapters: %v\n", err)
-			os.Exit(1)
+			os.Exit(0)
 		}
 
 		if len(chapterList.Data) != 1 {
+			spinnerChInfo.Fail("Failed to fetch manga chapters")
 			fmt.Println("no chapters to download")
-			os.Exit(1)
+			os.Exit(0)
 		}
 
-		checkChapter, _ := strconv.Atoi(chapterList.Data[0].Attributes.Chapter)
+		checkChapter, _ := strconv.Atoi(chapterList.FirstChapter())
 		if checkChapter > chapter+1 {
+			spinnerChInfo.Fail("Failed to fetch manga chapters")
 			fmt.Println("no chapters to download")
-			os.Exit(1)
+			os.Exit(0)
 		}
-		if checkChapter == chapter+1 {
+		if checkChapter == chapter+1 &&
+			(translateGroup == "" || chapterList.IsTranslateGroup(translateGroup)) {
 			break
 		}
 	}
 	spinnerChInfo.Success("Fetched manga chapters")
 
-	mangaChapter := chapterList.Data[0].Attributes.Chapter
-	mangaVolume := chapterList.Data[0].Attributes.Volume
-	downloadedChapterId := chapterList.Data[0].ID
+	mangaChapter := chapterList.FirstChapter()
+	mangaVolume := chapterList.FirstVolume()
+	downloadedChapterId := chapterList.FirstID()
 
 	imageList, err := c.GetChapterImageList(downloadedChapterId)
 	if err != nil {
@@ -130,18 +145,32 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	}
 	defer archive.Close()
 
+	fmt.Println("Information about manga chapter:")
+	fmt.Printf("\tTitle: %s\n", mangaTitle)
+	fmt.Printf("\tVolume: %s\n", mangaVolume)
+	fmt.Printf("\tChapter: %s\n", mangaChapter)
+	fmt.Printf("\tPages: %d\n", chapterList.FirstChapterPages())
+	fmt.Printf("\tLanguage: %s\n", chapterList.FirstTranslationLanguage())
+	fmt.Printf("\tTranslated by: %s\n", chapterList.FirstTranslateGroup())
+	fmt.Printf("\tTranslator description: %s\n", chapterList.FirstTranslateGroupDescription())
+
 	dlbar, _ := pterm.DefaultProgressbar.WithMaxWidth(80).
 		WithTotal(len(imageList.Chapter.Data)).
 		WithTitle("Downloading images...").Start()
 
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
-	for i, fileName := range imageList.Chapter.Data {
-		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.png",
+	fileImages := imageList.Chapter.Data
+	if isJpgFileFormat {
+		fileImages = imageList.Chapter.DataSaver
+	}
+	for i, fileName := range fileImages {
+		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
 			strings.ReplaceAll(mangaTitle, " ", "_"),
 			mangaVolume,
 			mangaChapter,
-			i+1)
+			i+1,
+			imgExt)
 
 		dlbar.UpdateTitle("Downloading " + insideFilename)
 
@@ -153,7 +182,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		}
 
 		image, err := mangadexapi.
-			DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName, false)
+			DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName,
+				isJpgFileFormat)
 		if err != nil {
 			dlbar.Increment()
 			fmt.Printf("\nfailed to download image: %v\n", err)
@@ -167,4 +197,5 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		}
 		dlbar.Increment()
 	}
+	fmt.Printf("Saved in : %s\n", archive.Name())
 }
