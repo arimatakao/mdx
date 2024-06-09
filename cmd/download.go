@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/arimatakao/mdx/mangadexapi"
@@ -21,7 +22,7 @@ var (
 		Run:     downloadManga,
 	}
 	mangaurldl string
-	outputFile string
+	outputDir  string
 	language   string
 	chapter    string
 )
@@ -31,15 +32,14 @@ func init() {
 
 	downloadCmd.Flags().StringVarP(&mangaurldl,
 		"url", "u", "", "specify the URL for the manga")
-	downloadCmd.Flags().StringVarP(&outputFile,
-		"output", "o", "", "specify output cbz file of manga")
+	downloadCmd.Flags().StringVarP(&outputDir,
+		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
 	downloadCmd.Flags().StringVarP(&chapter,
 		"chapter", "c", "1", "specify chapter")
 
 	downloadCmd.MarkFlagRequired("url")
-	downloadCmd.MarkFlagRequired("output")
 }
 
 func downloadManga(cmd *cobra.Command, args []string) {
@@ -75,6 +75,9 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	}
 	spinner.Success("Fetched chapters")
 
+	mangaChapter := list.Data[0].Attributes.Chapter
+	mangaVolume := list.Data[0].Attributes.Volume
+
 	if len(list.Data) == 0 {
 		fmt.Println("no chapters to download")
 		os.Exit(1)
@@ -87,7 +90,15 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		fmt.Printf("error while getting images of chapter: %v\n", err)
 		os.Exit(1)
 	}
-	archive, err := os.Create(outputFile)
+	err = os.MkdirAll(filepath.Join("", outputDir), os.ModePerm)
+	if err != nil {
+		fmt.Printf("error while creating : %v\n", err)
+		os.Exit(1)
+	}
+
+	filename := fmt.Sprintf("%s vol%s ch%s.cbz", mangaTitle, mangaVolume, mangaChapter)
+
+	archive, err := os.Create(filepath.Join(outputDir, filename))
 	if err != nil {
 		fmt.Printf("error while creating arhive: %v\n", err)
 		os.Exit(1)
@@ -103,8 +114,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	for i, fileName := range imageList.Chapter.Data {
 		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.png",
 			strings.ReplaceAll(mangaTitle, " ", "_"),
-			list.Data[0].Attributes.Volume,
-			list.Data[0].Attributes.Chapter,
+			mangaVolume,
+			mangaChapter,
 			i+1)
 
 		barTitle := fmt.Sprintf("Downloading %s", insideFilename)
