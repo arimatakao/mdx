@@ -13,7 +13,7 @@ import (
 var (
 	findCmd = &cobra.Command{
 		Use:     "find",
-		Aliases: []string{"f", "search"},
+		Aliases: []string{"f", "search", "list"},
 		Short:   "Find manga",
 		Long:    "Search and print manga info. Sort by revelance asceding. Best results will be down",
 		Run:     find,

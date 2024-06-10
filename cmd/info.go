@@ -13,10 +13,9 @@ import (
 
 var (
 	infoCmd = &cobra.Command{
-		Use:     "info",
-		Aliases: []string{"list"},
-		Short:   "Print detailed information about manga",
-		Run:     getInfo,
+		Use:   "info",
+		Short: "Print detailed information about manga",
+		Run:   getInfo,
 	}
 	mangaurl string
 )
