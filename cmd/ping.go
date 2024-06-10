@@ -19,7 +19,7 @@ func init() {
 }
 
 func ping(cmd *cobra.Command, args []string) {
-	c := mangadexapi.NewClient("")
+	c := mangadexapi.NewClient(MDX_USER_AGENT)
 	isAlive := c.Ping()
 
 	if isAlive {

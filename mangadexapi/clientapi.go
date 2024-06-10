@@ -62,23 +62,17 @@ type clientapi struct {
 	c *resty.Client
 }
 
-func newClient(baseUrl, userAgent string) *resty.Client {
-	if baseUrl == "" {
-		baseUrl = base_url
-	}
+func NewClient(userAgent string) clientapi {
 	if userAgent == "" {
 		userAgent = default_useragent
 	}
 
-	return resty.New().
+	c := resty.New().
 		SetRetryCount(5).
 		SetRetryWaitTime(time.Millisecond*200).
-		SetBaseURL(baseUrl).
+		SetBaseURL(base_url).
 		SetHeader("User-Agent", userAgent)
-}
 
-func NewClient(userAgent string) clientapi {
-	c := newClient("", "")
 	return clientapi{
 		c: c,
 	}

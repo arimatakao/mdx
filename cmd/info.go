@@ -43,7 +43,7 @@ func getInfo(cmd *cobra.Command, args []string) {
 
 	mangaid := paths[2]
 
-	c := mangadexapi.NewClient("")
+	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinner, _ := pterm.DefaultSpinner.Start("Fetching info...")
 	info, err := c.GetMangaInfo(mangaid)

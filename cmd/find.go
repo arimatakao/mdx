@@ -31,7 +31,7 @@ func init() {
 }
 
 func find(cmd *cobra.Command, args []string) {
-	c := mangadexapi.NewClient("")
+	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinner, _ := pterm.DefaultSpinner.Start("Searching manga...")
 

@@ -78,7 +78,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		imgExt = "jpg"
 	}
 
-	c := mangadexapi.NewClient("")
+	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
 	mangaInfo, err := c.GetMangaInfo(mangaId)
