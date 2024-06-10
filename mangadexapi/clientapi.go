@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -56,6 +57,32 @@ func (e *ErrorResponse) Error() string {
 	errorMsg += "]"
 
 	return errorMsg
+}
+
+func GetMangaIdFromUrl(link string) string {
+	parsedUrl, err := url.Parse(link)
+	if err != nil {
+		return ""
+	}
+
+	if parsedUrl.Host != "mangadex.org" {
+		return ""
+	}
+
+	paths := strings.Split(parsedUrl.Path, "/")
+	if len(paths) < 3 {
+		return ""
+	}
+	return paths[2]
+}
+
+func GetMangaIdFromArg(args []string) string {
+	for _, arg := range args {
+		if u := GetMangaIdFromUrl(arg); u != "" {
+			return u
+		}
+	}
+	return ""
 }
 
 type clientapi struct {

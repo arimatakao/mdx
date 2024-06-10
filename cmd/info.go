@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
@@ -13,39 +11,43 @@ import (
 
 var (
 	infoCmd = &cobra.Command{
-		Use:   "info",
-		Short: "Print detailed information about manga",
-		Run:   getInfo,
+		Use:    "info",
+		Short:  "Print detailed information about manga",
+		PreRun: checkInfoArgs,
+		Run:    getInfo,
 	}
-	mangaurl string
 )
 
 func init() {
 	rootCmd.AddCommand(infoCmd)
 
 	infoCmd.Flags().StringVarP(&mangaurl, "url", "u", "", "specify the URL for the manga")
+}
 
-	infoCmd.MarkFlagRequired("url")
+func checkInfoArgs(cmd *cobra.Command, args []string) {
+	if len(args) == 0 && mangaurl == "" {
+		cmd.Help()
+		os.Exit(0)
+	}
+
+	if mangaurl == "" {
+		mangaId = mangadexapi.GetMangaIdFromArg(args)
+	} else {
+		mangaId = mangadexapi.GetMangaIdFromUrl(mangaurl)
+	}
+
+	if mangaId == "" {
+		fmt.Println("error: Malformated URL")
+		os.Exit(0)
+	}
 }
 
 func getInfo(cmd *cobra.Command, args []string) {
-	parsedUrl, err := url.Parse(mangaurl)
-	if err != nil {
-		fmt.Println("error: Malformated URL")
-		os.Exit(0)
-	}
-	paths := strings.Split(parsedUrl.Path, "/")
-	if len(paths) < 3 {
-		fmt.Println("error: Malformated URL")
-		os.Exit(0)
-	}
-
-	mangaid := paths[2]
-
+	fmt.Println(mangaId)
 	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinner, _ := pterm.DefaultSpinner.Start("Fetching info...")
-	info, err := c.GetMangaInfo(mangaid)
+	info, err := c.GetMangaInfo(mangaId)
 	if err != nil {
 		spinner.Fail("Failed to fetch manga info")
 		fmt.Printf("error while getting info: %v\n", err)

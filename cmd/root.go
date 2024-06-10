@@ -7,11 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	MDX_APP_VERSION      = "v1.0.0"
-	MANGADEX_API_VERSION = "v5.10.2"
-
-	MDX_USER_AGENT = "mdx-cli " + MDX_APP_VERSION
+var (
+	// general flags
+	mangaurl string
+	mangaId  string
 )
 
 var (
@@ -48,6 +47,8 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+
 	rootCmd.Flags().BoolP("help", "h", false, "Help message for toggle")
 	rootCmd.Flags().BoolVarP(&versionApp, "version", "v", false, "version of application")
 	rootCmd.Flags().BoolVarP(&versionAPI, "version-api", "a", false, "version of API")

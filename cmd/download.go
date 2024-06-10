@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,10 +19,11 @@ var (
 		Use:     "download",
 		Aliases: []string{"dl"},
 		Short:   "Download manga by URL",
+		PreRun:  checkDownloadArgs,
 		Run:     downloadManga,
 	}
+	imgExt          string = "png"
 	isJpgFileFormat bool
-	mangaurldl      string
 	outputDir       string
 	language        string
 	translateGroup  string
@@ -35,7 +35,7 @@ func init() {
 
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
 		"jpg", "j", false, "download compressed images for small archive size (default: false)")
-	downloadCmd.Flags().StringVarP(&mangaurldl,
+	downloadCmd.Flags().StringVarP(&mangaurl,
 		"url", "u", "", "specify the URL for the manga")
 	downloadCmd.Flags().StringVarP(&outputDir,
 		"output", "o", ".", "specify output directory for file")
@@ -45,39 +45,40 @@ func init() {
 		"translated-by", "t", "", "specify part of name translation group")
 	downloadCmd.Flags().IntVarP(&chapter,
 		"chapter", "c", 1, "specify chapter")
-
-	downloadCmd.MarkFlagRequired("url")
 }
 
-func downloadManga(cmd *cobra.Command, args []string) {
-	parsedUrl, err := url.Parse(mangaurldl)
-	if err != nil {
-		fmt.Println("error: Malformated URL")
-		os.Exit(1)
+func checkDownloadArgs(cmd *cobra.Command, args []string) {
+	if len(args) == 0 && mangaurl == "" {
+		cmd.Help()
+		os.Exit(0)
 	}
 
-	paths := strings.Split(parsedUrl.Path, "/")
-	if len(paths) < 3 {
-		fmt.Println("error: Malformated URL")
-		os.Exit(1)
+	if mangaurl == "" {
+		mangaId = mangadexapi.GetMangaIdFromArg(args)
+	} else {
+		mangaId = mangadexapi.GetMangaIdFromUrl(mangaurl)
 	}
 
-	mangaId := paths[2]
+	if mangaId == "" {
+		fmt.Println("error: Malformated URL")
+		os.Exit(0)
+	}
 
 	if chapter < 0 {
 		fmt.Println("error: Malformated chapter")
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	if chapter != 0 {
 		chapter -= 1
 	}
 
-	imgExt := "png"
 	if isJpgFileFormat {
 		imgExt = "jpg"
 	}
+}
 
+func downloadManga(cmd *cobra.Command, args []string) {
 	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
@@ -154,9 +155,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	fmt.Printf("\tTranslated by: %s\n", chapterList.FirstTranslateGroup())
 	fmt.Printf("\tTranslator description: %s\n", chapterList.FirstTranslateGroupDescription())
 
-	dlbar, _ := pterm.DefaultProgressbar.WithMaxWidth(80).
-		WithTotal(len(imageList.Chapter.Data)).
-		WithTitle("Downloading images...").Start()
+	dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(imageList.Chapter.Data)).Start()
 
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
