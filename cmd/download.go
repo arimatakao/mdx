@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
@@ -146,14 +147,16 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	}
 	defer archive.Close()
 
-	fmt.Println("Information about manga chapter:")
-	fmt.Printf("\tTitle: %s\n", mangaTitle)
-	fmt.Printf("\tVolume: %s\n", mangaVolume)
-	fmt.Printf("\tChapter: %s\n", mangaChapter)
-	fmt.Printf("\tPages: %d\n", chapterList.FirstChapterPages())
-	fmt.Printf("\tLanguage: %s\n", chapterList.FirstTranslationLanguage())
-	fmt.Printf("\tTranslated by: %s\n", chapterList.FirstTranslateGroup())
-	fmt.Printf("\tTranslator description: %s\n", chapterList.FirstTranslateGroupDescription())
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Fprintf(w, "Title\t: %s\n", mangaTitle)
+	fmt.Fprintf(w, "Chapter title\t: %s\n", chapterList.FirstChapterTitle())
+	fmt.Fprintf(w, "Chapter\t: %s\n", mangaChapter)
+	fmt.Fprintf(w, "Volume\t: %s\n", mangaVolume)
+	fmt.Fprintf(w, "Pages\t: %d\n", chapterList.FirstChapterPages())
+	fmt.Fprintf(w, "Language\t: %s\n", chapterList.FirstTranslationLanguage())
+	fmt.Fprintf(w, "Translated by\t: %s\n", chapterList.FirstTranslateGroup())
+	fmt.Fprintf(w, "Translator description\t: %s\n", chapterList.FirstTranslateGroupDescription())
+	w.Flush()
 
 	dlbar, _ := pterm.DefaultProgressbar.
 		WithTitle("Downloading pages").WithTotal(len(imageList.Chapter.Data)).Start()

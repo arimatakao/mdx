@@ -325,6 +325,13 @@ func (l ResponseChapterList) FirstChapter() string {
 	return l.Data[0].Attributes.Chapter
 }
 
+func (l ResponseChapterList) FirstChapterTitle() string {
+	if len(l.Data) == 0 {
+		return ""
+	}
+	return l.Data[0].Attributes.Title
+}
+
 func (l ResponseChapterList) FirstVolume() string {
 	if len(l.Data) == 0 {
 		return ""
