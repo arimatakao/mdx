@@ -9,5 +9,8 @@ build:
 	mkdir $(BIN_DIR)
 	go build -o $(BIN_DIR)/$(BINARY) $(MAIN)
 
+install:
+	go install
+
 clean:
 	rm -rf bin
