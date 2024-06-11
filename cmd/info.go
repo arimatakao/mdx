@@ -64,12 +64,15 @@ func printMangaInfo(i mangadexapi.MangaInfo) {
 	fmt.Println("Authors: ", i.GetAuthors())
 	fmt.Println("Artists: ", i.GetArtists())
 	fmt.Printf("Year: %d\n", i.Attributes.Year)
-	fmt.Printf("Tags: %s\n", i.GetTags())
 	fmt.Println("Status: ", i.Attributes.Status)
-	fmt.Println("Last chapter: ", i.Attributes.LastChapter)
 	fmt.Println("Original language: ", i.Attributes.OriginalLanguage)
 	fmt.Printf("Translated: %v\n", i.Attributes.AvailableTranslatedLanguages)
-	fmt.Printf("Link: https://mangadex.org/title/%s\n", i.ID)
+	fmt.Printf("Tags: %s\n", i.GetTags())
 	fmt.Println("Description:")
 	fmt.Println(i.Attributes.Description["en"])
+	fmt.Println("---")
+	fmt.Println("Read or Buy here:")
+	for _, v := range i.GetLinks() {
+		fmt.Println(v)
+	}
 }

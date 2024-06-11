@@ -212,6 +212,17 @@ func (mi MangaInfo) GetAltTitles() string {
 	return strings.Join(altTitles, " | ")
 }
 
+func (mi MangaInfo) GetLinks() []string {
+	links := []string{}
+	for _, link := range mi.Attributes.Links {
+		u, err := url.Parse(link)
+		if err == nil && u.Scheme == "https" {
+			links = append(links, link)
+		}
+	}
+	return links
+}
+
 type ResponseMangaList struct {
 	Result   string      `json:"result"`
 	Response string      `json:"response"`
