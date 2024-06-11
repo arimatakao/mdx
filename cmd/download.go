@@ -155,7 +155,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	fmt.Printf("\tTranslated by: %s\n", chapterList.FirstTranslateGroup())
 	fmt.Printf("\tTranslator description: %s\n", chapterList.FirstTranslateGroupDescription())
 
-	dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(imageList.Chapter.Data)).Start()
+	dlbar, _ := pterm.DefaultProgressbar.
+		WithTitle("Downloading pages").WithTotal(len(imageList.Chapter.Data)).Start()
 
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
@@ -170,8 +171,6 @@ func downloadManga(cmd *cobra.Command, args []string) {
 			mangaChapter,
 			i+1,
 			imgExt)
-
-		dlbar.UpdateTitle("Downloading " + insideFilename)
 
 		w, err := zipWriter.Create(insideFilename)
 		if err != nil {
@@ -195,5 +194,13 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		}
 		dlbar.Increment()
 	}
-	fmt.Printf("Saved in : %s\n", archive.Name())
+
+	savedDir := ""
+	if outputDir == "." {
+		wd, _ := os.Getwd()
+		savedDir = filepath.Join(wd, outputDir, archive.Name())
+	} else {
+		savedDir = archive.Name()
+	}
+	fmt.Printf("Saved in: %s\n", savedDir)
 }
