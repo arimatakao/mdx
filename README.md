@@ -9,11 +9,17 @@ mdx is a command-line interface program for downloading manga from the [MangaDex
 
 Open unarhived folder and execute `mdx` file for use application.
 
+Also, you can install the application with `go`:
+
+```
+go install github.com/arimatakao/mdx@latest
+```
+
 ## Usage examples
 
 Download manga:
 
-```
+```shell
 # get information about available flags
 mdx download --help
 
@@ -21,26 +27,28 @@ mdx download --help
 mdx download -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 # or
 mdx dl -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+# or
+mdx dl https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
-# specify specific chapter
-mdx dl -c 123 -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+# download specific chapter
+mdx dl -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify language (for get available languages execute info subcommand)
-mdx dl -l it -c 123 -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify output directory
-mdx dl -o your/dir -l it -c 123 -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -o your/dir -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify translation
-mdx dl -t Marcelo -o your/dir -l it -c 123 -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -t Marcelo -o your/dir -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
-# download compressed version (lower image quality and cbz file size)
-mdx dl -j -t Marcelo -o your/dir -l it -c 123 -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+# download compressed version (lower image quality and file size)
+mdx dl -j -t Marcelo -o your/dir -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 ```
 
 Get help about subcommands and flags:
 
-```
+```shell
 mdx
 mdx -h
 # ping subcommand is example
@@ -50,7 +58,7 @@ mdx ping -h
 
 Search manga:
 
-```
+```shell
 mdx find -t "Manga Title"
 mdx search -t "Manga Title"
 mdx f -t "Manga Title"
@@ -58,13 +66,13 @@ mdx f -t "Manga Title"
 
 Get detail information about manga:
 
-```
+```shell
 mdx info -u "https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk"
 ```
 
 Check connection to MangaDex API:
 
-```
+```shell
 mdx ping
 ```
 
