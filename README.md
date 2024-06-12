@@ -28,10 +28,13 @@ mdx download -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/
 # or
 mdx dl -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 # or
-mdx dl https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
 # download specific chapter
 mdx dl -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+
+# download range chapters
+mdx dl -c 12-34 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
 # specify language (for get available languages execute info subcommand)
 mdx dl -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
