@@ -148,7 +148,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(w, "Volume\t: %s\n", chapter.Volume())
 		fmt.Fprintf(w, "Language\t: %s\n", chapter.Language())
 		fmt.Fprintf(w, "Translated by\t: %s\n", chapter.Translator())
-		fmt.Fprintf(w, "Uploaded by:\t: %s\n", chapter.UploadedBy())
+		fmt.Fprintf(w, "Uploaded by\t: %s\n", chapter.UploadedBy())
 		w.Flush()
 
 		dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(chapter.PngFiles)).
@@ -201,6 +201,5 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		}
 		zipWriter.Close()
 		archive.Close()
-		dlbar.UpdateTitle("downloaded")
 	}
 }
