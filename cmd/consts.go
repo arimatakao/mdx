@@ -1,7 +1,7 @@
 package cmd
 
 const (
-	MDX_APP_VERSION      = "v1.0.1"
+	MDX_APP_VERSION      = "v1.2.0"
 	MANGADEX_API_VERSION = "v5.10.2"
 
 	MDX_USER_AGENT = "mdx-cli " + MDX_APP_VERSION
