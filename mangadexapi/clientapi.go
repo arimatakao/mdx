@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -89,12 +90,19 @@ type clientapi struct {
 	c *resty.Client
 }
 
+type silentLogger struct{}
+
+func (l silentLogger) Errorf(format string, v ...interface{}) {}
+func (l silentLogger) Warnf(format string, v ...interface{})  {}
+func (l silentLogger) Debugf(format string, v ...interface{}) {}
+
 func NewClient(userAgent string) clientapi {
 	if userAgent == "" {
 		userAgent = default_useragent
 	}
 
 	c := resty.New().
+		SetLogger(silentLogger{}).
 		SetRetryCount(5).
 		SetRetryWaitTime(time.Millisecond*200).
 		SetBaseURL(base_url).
@@ -155,6 +163,7 @@ type MangaAttrib struct {
 
 type RelAttribute struct {
 	Name        string `json:"name"`
+	Username    string `json:"username"`
 	Description string `json:"description"`
 }
 
@@ -313,6 +322,44 @@ type ChapterAttr struct {
 	Version            int       `json:"version"`
 }
 
+func (c Chapter) Volume() string {
+	return c.Attributes.Volume
+}
+
+func (c Chapter) Number() string {
+	return c.Attributes.Chapter
+}
+
+func (c Chapter) Title() string {
+	return c.Attributes.Title
+}
+
+func (c Chapter) PagesCount() int {
+	return c.Attributes.Pages
+}
+
+func (c Chapter) UploadedBy() string {
+	for _, rel := range c.Relationships {
+		if rel.Type == "user" {
+			return rel.Attributes.Username
+		}
+	}
+	return ""
+}
+
+func (c Chapter) isTranslatedByGroup(translateGroup string) bool {
+	return strings.Contains(c.getTranslator(), translateGroup)
+}
+
+func (c Chapter) getTranslator() string {
+	for _, rel := range c.Relationships {
+		if rel.Type == "scanlation_group" {
+			return rel.Attributes.Name
+		}
+	}
+	return ""
+}
+
 type ResponseChapterList struct {
 	Result   string    `json:"result"`
 	Response string    `json:"response"`
@@ -322,90 +369,48 @@ type ResponseChapterList struct {
 	Total    int       `json:"total"`
 }
 
-func (l ResponseChapterList) FirstID() string {
+func (l ResponseChapterList) GetChapters(lowest, highest int, transgp string) ([]Chapter, int) {
 	if len(l.Data) == 0 {
-		return ""
-	}
-	return l.Data[0].ID
-}
-
-func (l ResponseChapterList) FirstChapter() string {
-	if len(l.Data) == 0 {
-		return ""
-	}
-	return l.Data[0].Attributes.Chapter
-}
-
-func (l ResponseChapterList) FirstChapterTitle() string {
-	if len(l.Data) == 0 {
-		return ""
-	}
-	return l.Data[0].Attributes.Title
-}
-
-func (l ResponseChapterList) FirstVolume() string {
-	if len(l.Data) == 0 {
-		return ""
-	}
-	return l.Data[0].Attributes.Volume
-}
-
-func (l ResponseChapterList) IsTranslateGroup(translateGroup string) bool {
-	if len(l.Data) == 0 {
-		return false
+		return []Chapter{}, 0
 	}
 
-	for _, rel := range l.Data[0].Relationships {
-		if rel.Type == "scanlation_group" &&
-			strings.Contains(rel.Attributes.Name, translateGroup) {
-			return true
+	found := []Chapter{}
+	countExtraChapters := 0
+
+	for _, chapter := range l.Data {
+		if chapter.Number() == "" {
+			continue
+		}
+
+		num, err := strconv.Atoi(chapter.Number())
+		if err == nil {
+			if num >= lowest && num <= highest && chapter.isTranslatedByGroup(transgp) {
+				found = append(found, chapter)
+			}
+			continue
+		}
+
+		countExtraChapters += 1
+
+		nums := strings.Split(chapter.Attributes.Chapter, ".")
+		if len(nums) != 2 {
+			continue
+		}
+
+		num, err = strconv.Atoi(nums[0])
+		if err != nil {
+			continue
+		}
+
+		if num >= lowest && num <= highest && chapter.isTranslatedByGroup(transgp) {
+			found = append(found, chapter)
 		}
 	}
-	return false
+
+	return found, countExtraChapters
 }
 
-func (l ResponseChapterList) FirstTranslateGroup() string {
-	if len(l.Data) == 0 {
-		return ""
-	}
-
-	for _, rel := range l.Data[0].Relationships {
-		if rel.Type == "scanlation_group" {
-			return rel.Attributes.Name
-		}
-	}
-	return ""
-}
-
-func (l ResponseChapterList) FirstTranslateGroupDescription() string {
-	if len(l.Data) == 0 {
-		return ""
-	}
-
-	for _, rel := range l.Data[0].Relationships {
-		if rel.Type == "scanlation_group" {
-			return rel.Attributes.Description
-		}
-	}
-	return ""
-}
-
-func (l ResponseChapterList) FirstTranslationLanguage() string {
-	if len(l.Data) == 0 {
-		return ""
-	}
-	return l.Data[0].Attributes.TranslatedLanguage
-}
-
-func (l ResponseChapterList) FirstChapterPages() int {
-	if len(l.Data) == 0 {
-		return 0
-	}
-	return l.Data[0].Attributes.Pages
-}
-
-func (a clientapi) GetChaptersList(limit, offset, mangaId,
-	language string) (ResponseChapterList, error) {
+func (a clientapi) GetChaptersList(limit, offset int, mangaId, language string) (ResponseChapterList, error) {
 
 	if mangaId == "" {
 		return ResponseChapterList{}, ErrBadInput
@@ -415,7 +420,8 @@ func (a clientapi) GetChaptersList(limit, offset, mangaId,
 	respErr := ErrorResponse{}
 
 	query := fmt.Sprintf(
-		"limit=%s&offset=%s&translatedLanguage[]=%s&includes[]=scanlation_group&order[volume]=asc&order[chapter]=asc",
+		"limit=%d&offset=%d&translatedLanguage[]=%s"+
+			"&includes[]=scanlation_group&order[volume]=asc&order[chapter]=asc",
 		limit, offset, language)
 
 	resp, err := a.c.R().
@@ -435,16 +441,16 @@ func (a clientapi) GetChaptersList(limit, offset, mangaId,
 	return list, nil
 }
 
-type ChapterData struct {
+type ChapterMetaInfo struct {
 	Hash      string   `json:"hash"`
 	Data      []string `json:"data"`
 	DataSaver []string `json:"dataSaver"`
 }
 
 type ResponseChapterImages struct {
-	Result  string      `json:"result"`
-	BaseURL string      `json:"baseUrl"`
-	Chapter ChapterData `json:"chapter"`
+	Result          string          `json:"result"`
+	BaseURL         string          `json:"baseUrl"`
+	ChapterMetaInfo ChapterMetaInfo `json:"chapter"`
 }
 
 func (a clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages, error) {
@@ -501,4 +507,131 @@ func (a clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 	}
 
 	return bytes.NewBuffer(resp.Body()), nil
+}
+
+// not used for requests or responses
+type ChapterFullInfo struct {
+	info            Chapter
+	DownloadBaseURL string
+	HashId          string
+	PngFiles        []string
+	JpgFiles        []string
+}
+
+func (c ChapterFullInfo) Title() string {
+	return c.info.Attributes.Title
+}
+
+func (c ChapterFullInfo) Number() string {
+	return c.info.Number()
+}
+
+func (c ChapterFullInfo) Volume() string {
+	return c.info.Volume()
+}
+
+func (c ChapterFullInfo) Language() string {
+	return c.info.Attributes.TranslatedLanguage
+}
+
+func (c ChapterFullInfo) Translator() string {
+	return c.info.getTranslator()
+}
+
+func (c ChapterFullInfo) UploadedBy() string {
+	return c.info.UploadedBy()
+}
+
+func (c ChapterFullInfo) ImagesBaseUrl() string {
+	return c.DownloadBaseURL
+}
+
+func (c ChapterFullInfo) ImagesFiles() []string {
+	return c.PngFiles
+}
+
+func (c ChapterFullInfo) ImagesCompressedFiles() []string {
+	return c.JpgFiles
+}
+
+func (a clientapi) GetFullChaptersInfo(mangaId, language, translationGroup string,
+	lowestChapter, highestChapter int) ([]ChapterFullInfo, error) {
+
+	if mangaId == "" ||
+		language == "" ||
+		lowestChapter > highestChapter ||
+		lowestChapter < 0 || highestChapter < 0 {
+		return []ChapterFullInfo{}, ErrBadInput
+	}
+
+	chapters := []Chapter{}
+	chaptersInfo := []ChapterFullInfo{}
+
+	lowBound := lowestChapter
+	if lowBound <= 10 {
+		lowBound = 0
+	}
+	highBound := highestChapter
+	if highBound < 10 {
+		highBound = 10
+	}
+	for lowBound <= highBound {
+		query := fmt.Sprintf(
+			"limit=%d&offset=%d&translatedLanguage[]=%s"+
+				"&includes[]=scanlation_group&includes[]=user"+
+				"&order[volume]=asc&order[chapter]=asc",
+			10, lowBound, language)
+
+		list := ResponseChapterList{}
+		respErr := ErrorResponse{}
+
+		resp, err := a.c.R().
+			SetError(&respErr).
+			SetResult(&list).
+			SetPathParam("id", mangaId).
+			SetQueryString(query).
+			Get(manga_feed_path)
+		if err != nil {
+			return []ChapterFullInfo{}, ErrConnection
+		}
+		if resp.IsError() {
+			return []ChapterFullInfo{}, &respErr
+		}
+
+		found, extra := list.GetChapters(lowestChapter, highestChapter, translationGroup)
+
+		chapters = append(chapters, found...)
+		lowBound += 10
+		highBound += extra
+	}
+
+	for _, chapter := range chapters {
+		chapImages := ResponseChapterImages{}
+		respErr := ErrorResponse{}
+
+		resp, err := a.c.R().
+			SetError(&respErr).
+			SetResult(&chapImages).
+			SetPathParam("id", chapter.ID).
+			Get(chapter_images_path)
+		if err != nil {
+			return []ChapterFullInfo{}, ErrConnection
+		}
+
+		if resp.IsError() {
+			return []ChapterFullInfo{}, &respErr
+		}
+
+		fullInfo := ChapterFullInfo{
+			info:            chapter,
+			DownloadBaseURL: chapImages.BaseURL,
+			HashId:          chapImages.ChapterMetaInfo.Hash,
+			PngFiles:        chapImages.ChapterMetaInfo.Data,
+			JpgFiles:        chapImages.ChapterMetaInfo.DataSaver,
+		}
+
+		chaptersInfo = append(chaptersInfo, fullInfo)
+	}
+
+	return chaptersInfo, nil
 }

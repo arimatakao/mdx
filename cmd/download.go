@@ -28,7 +28,9 @@ var (
 	outputDir       string
 	language        string
 	translateGroup  string
-	chapter         int
+	chaptersRange   string
+	lowestChapter   int
+	highestChapter  int
 )
 
 func init() {
@@ -44,8 +46,8 @@ func init() {
 		"language", "l", "en", "specify language")
 	downloadCmd.Flags().StringVarP(&translateGroup,
 		"translated-by", "t", "", "specify part of name translation group")
-	downloadCmd.Flags().IntVarP(&chapter,
-		"chapter", "c", 1, "specify chapter")
+	downloadCmd.Flags().StringVarP(&chaptersRange,
+		"chapter", "c", "1", "specify chapters")
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
@@ -65,17 +67,39 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	if chapter < 0 {
-		fmt.Println("error: Malformated chapter")
+	singleChapter, err := strconv.Atoi(chaptersRange)
+	if err == nil {
+		if singleChapter < 0 {
+			fmt.Println("error: Malformated chapters format")
+			os.Exit(0)
+		}
+
+		lowestChapter = singleChapter
+		highestChapter = singleChapter
+	} else if nums := strings.Split(chaptersRange, "-"); len(nums) == 2 {
+		lowest, err := strconv.Atoi(nums[0])
+		if err != nil {
+			fmt.Println("error: Malformated chapters format")
+			os.Exit(0)
+		}
+
+		highest, err := strconv.Atoi(nums[1])
+		if err != nil {
+			fmt.Println("error: Malformated chapters format")
+			os.Exit(0)
+		}
+
+		if lowest >= highest {
+			fmt.Println("error: Malformated chapters format")
+			os.Exit(0)
+		}
+
+		lowestChapter = lowest
+		highestChapter = highest
+
+	} else {
+		fmt.Println("error: Malformated chapters format")
 		os.Exit(0)
-	}
-
-	if chapter != 0 {
-		chapter -= 1
-	}
-
-	if isJpgFileFormat {
-		imgExt = "jpg"
 	}
 }
 
@@ -92,118 +116,91 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	mangaTitle := mangaInfo.Attributes.Title["en"]
 	spinnerMangaInfo.Success("Fetched manga info")
 
-	chapterList := mangadexapi.ResponseChapterList{}
-	spinnerChInfo, _ := pterm.DefaultSpinner.Start("Fetching manga chapter...")
-	for i := 0; ; i++ {
-		chapterList, err = c.
-			GetChaptersList("1", strconv.Itoa(chapter+i),
-				mangaId, language)
-		if err != nil {
-			spinnerChInfo.Fail("Failed to fetch manga chapters")
-			fmt.Printf("error while getting chapters: %v\n", err)
-			os.Exit(0)
-		}
-
-		if len(chapterList.Data) != 1 {
-			spinnerChInfo.Fail("Failed to fetch manga chapters")
-			fmt.Println("no chapters to download")
-			os.Exit(0)
-		}
-
-		checkChapter, _ := strconv.Atoi(chapterList.FirstChapter())
-		if checkChapter > chapter+1 {
-			spinnerChInfo.Fail("Failed to fetch manga chapters")
-			fmt.Println("no chapters to download")
-			os.Exit(0)
-		}
-		if checkChapter == chapter+1 &&
-			(translateGroup == "" || chapterList.IsTranslateGroup(translateGroup)) {
-			break
-		}
-	}
-	spinnerChInfo.Success("Fetched manga chapters")
-
-	mangaChapter := chapterList.FirstChapter()
-	mangaVolume := chapterList.FirstVolume()
-	downloadedChapterId := chapterList.FirstID()
-
-	imageList, err := c.GetChapterImageList(downloadedChapterId)
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
+	chapters, err := c.GetFullChaptersInfo(mangaId, language, translateGroup,
+		lowestChapter, highestChapter)
 	if err != nil {
-		fmt.Printf("error while getting images of chapter: %v\n", err)
+		spinnerChapInfo.Fail("Failed to get manga info")
+		fmt.Printf("error while getting manga chapters: %v\n", err)
 		os.Exit(1)
 	}
+	spinnerChapInfo.Success("Fetched chapters info")
+
+	if len(chapters) == 0 {
+		fmt.Printf("chapters %s not found, try another "+
+			"range, language, translation group etc.\n", chaptersRange)
+		os.Exit(0)
+	}
+
+	fmt.Println("Manga title: ", mangaTitle)
+	fmt.Println("Alternative title: ", mangaInfo.GetAltTitles())
+	fmt.Println("====")
+
 	err = os.MkdirAll(filepath.Join("", outputDir), os.ModePerm)
 	if err != nil {
-		fmt.Printf("error while creating : %v\n", err)
+		fmt.Printf("error while creting directory: %v\n", err)
 		os.Exit(1)
 	}
+	for _, chapter := range chapters {
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		fmt.Fprintf(w, "Chapter\t: %s\n", chapter.Number())
+		fmt.Fprintf(w, "Chapter title\t: %s\n", chapter.Title())
+		fmt.Fprintf(w, "Volume\t: %s\n", chapter.Volume())
+		fmt.Fprintf(w, "Language\t: %s\n", chapter.Language())
+		fmt.Fprintf(w, "Translated by\t: %s\n", chapter.Translator())
+		fmt.Fprintf(w, "Uploaded by:\t: %s\n", chapter.UploadedBy())
+		w.Flush()
 
-	filename := fmt.Sprintf("%s vol%s ch%s.cbz", mangaTitle, mangaVolume, mangaChapter)
+		dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(chapter.PngFiles)).
+			WithTitle("Downloading pages").Start()
 
-	archive, err := os.Create(filepath.Join(outputDir, filename))
-	if err != nil {
-		fmt.Printf("error while creating arhive: %v\n", err)
-		os.Exit(1)
-	}
-	defer archive.Close()
+		filename := fmt.Sprintf("[%s] %s vol%s ch%s.cbz",
+			language, mangaTitle, chapter.Volume(), chapter.Number())
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-	fmt.Fprintf(w, "Title\t: %s\n", mangaTitle)
-	fmt.Fprintf(w, "Chapter title\t: %s\n", chapterList.FirstChapterTitle())
-	fmt.Fprintf(w, "Chapter\t: %s\n", mangaChapter)
-	fmt.Fprintf(w, "Volume\t: %s\n", mangaVolume)
-	fmt.Fprintf(w, "Pages\t: %d\n", chapterList.FirstChapterPages())
-	fmt.Fprintf(w, "Language\t: %s\n", chapterList.FirstTranslationLanguage())
-	fmt.Fprintf(w, "Translated by\t: %s\n", chapterList.FirstTranslateGroup())
-	fmt.Fprintf(w, "Translator description\t: %s\n", chapterList.FirstTranslateGroupDescription())
-	w.Flush()
-
-	dlbar, _ := pterm.DefaultProgressbar.
-		WithTitle("Downloading pages").WithTotal(len(imageList.Chapter.Data)).Start()
-
-	zipWriter := zip.NewWriter(archive)
-	defer zipWriter.Close()
-	fileImages := imageList.Chapter.Data
-	if isJpgFileFormat {
-		fileImages = imageList.Chapter.DataSaver
-	}
-	for i, fileName := range fileImages {
-		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
-			strings.ReplaceAll(mangaTitle, " ", "_"),
-			mangaVolume,
-			mangaChapter,
-			i+1,
-			imgExt)
-
-		w, err := zipWriter.Create(insideFilename)
+		archive, err := os.Create(filepath.Join(outputDir, filename))
 		if err != nil {
 			dlbar.Increment()
-			fmt.Printf("\nerror while creating file in arhive: %v\n", err)
-			continue
+			fmt.Printf("error while creating arhive: %v\n", err)
 		}
 
-		image, err := c.DownloadImage(imageList.BaseURL, imageList.Chapter.Hash, fileName,
-			isJpgFileFormat)
-		if err != nil {
+		zipWriter := zip.NewWriter(archive)
+
+		files := chapter.PngFiles
+		if isJpgFileFormat {
+			files = chapter.JpgFiles
+		}
+
+		for i, imageFile := range files {
+			insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
+				strings.ReplaceAll(mangaTitle, " ", "_"),
+				chapter.Volume(),
+				strings.ReplaceAll(chapter.Number(), ".", "_"),
+				i+1,
+				imgExt)
+
+			w, err := zipWriter.Create(insideFilename)
+			if err != nil {
+				dlbar.Increment()
+				fmt.Printf("\nerror while creating file in arhive: %v\n", err)
+				continue
+			}
+
+			outputImage, err := c.DownloadImage(chapter.DownloadBaseURL,
+				chapter.HashId, imageFile, isJpgFileFormat)
+			if err != nil {
+				dlbar.Increment()
+				fmt.Printf("\nfailed to download image: %v\n", err)
+				continue
+			}
+			if _, err := io.Copy(w, outputImage); err != nil {
+				dlbar.Increment()
+				fmt.Printf("\nfailed to copy image in archive: %v\n", err)
+				continue
+			}
 			dlbar.Increment()
-			fmt.Printf("\nfailed to download image: %v\n", err)
-			continue
 		}
-
-		if _, err := io.Copy(w, image); err != nil {
-			dlbar.Increment()
-			fmt.Printf("\nfailed to copy image in archive: %v\n", err)
-			continue
-		}
-		dlbar.Increment()
+		zipWriter.Close()
+		archive.Close()
+		dlbar.UpdateTitle("downloaded")
 	}
-
-	savedDir := ""
-	if outputDir == "." {
-		wd, _ := os.Getwd()
-		savedDir = filepath.Join(wd, outputDir, archive.Name())
-	} else {
-		savedDir = archive.Name()
-	}
-	fmt.Printf("Saved in: %s\n", savedDir)
 }
