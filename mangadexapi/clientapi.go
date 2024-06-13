@@ -249,7 +249,8 @@ func (a clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) 
 	mangaList := ResponseMangaList{}
 	respErr := ErrorResponse{}
 
-	query := fmt.Sprintf("title=%s&limit=%d&offset=%d&order[relevance]=asc",
+	query := fmt.Sprintf("title=%s&limit=%d&offset=%d&order[relevance]=asc"+
+		"&includes[]=author&includes[]=artist",
 		title, limit, offset)
 
 	if !isDoujinshiAllow {
