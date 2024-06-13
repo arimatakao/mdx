@@ -241,23 +241,25 @@ type ResponseMangaList struct {
 	Total    int         `json:"total"`
 }
 
-func (a clientapi) Find(title, limit, offset string) (ResponseMangaList, error) {
-	if title == "" || limit == "" || offset == "" {
+func (a clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) (ResponseMangaList, error) {
+	if title == "" || limit == 0 || offset < 0 {
 		return ResponseMangaList{}, ErrBadInput
 	}
 
 	mangaList := ResponseMangaList{}
 	respErr := ErrorResponse{}
 
+	query := fmt.Sprintf("title=%s&limit=%d&offset=%d&order[relevance]=asc",
+		title, limit, offset)
+
+	if !isDoujinshiAllow {
+		query += "&excludedTags[]=b13b2a48-c720-44a9-9c77-39c9979373fb&excludedTagsMode=OR"
+	}
+
 	resp, err := a.c.R().
 		SetError(&respErr).
 		SetResult(&mangaList).
-		SetQueryParams(map[string]string{
-			"title":            title,
-			"limit":            limit,
-			"offset":           offset,
-			"order[relevance]": "asc",
-		}).
+		SetQueryString(query).
 		Get(manga_path)
 	if err != nil {
 		return ResponseMangaList{}, ErrConnection
