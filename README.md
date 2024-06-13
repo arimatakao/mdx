@@ -103,15 +103,19 @@ mdx ping
 ### Functionality
 
 - [X] Remove Doujinshi from list in `find` subcommand and add `doujinshi` flag for show Doujinshi in list.
+- [ ] Add metadata for cbz downloaded archive.
 - [ ] Add search filter for `find` subcommand.
 - [ ] Add flag `random` in `info` subcommand for get information about random manga.
-- [ ] Add flag `last` to `download` subcommand, which download last chapter.
-- [ ] Add flag `this` to `download` subcommand, which accepts a link to the manga chapter and downloads it.
-- [ ] Add flag `volume` to `download` subcommand, which accepts volume number of manga and downloads all chapter from volume.
-- [ ] Add flag `oneshot` to `download` subcommand, which downloads all oneshots.
-- [ ] Add flag `all` to `download` subcommand, which download all chapters.
-- [ ] Add flag `join` (or `bundle` or `pack`) to `download` subcommand, which downloads all chapters in one file.
-- [ ] Add flag `extension` (or `format`) to `download` subcommand, which sets the extension of the output file.
+- [ ] Add flag to `download`:
+    - [ ] `last` - download latest chapter.
+    - [ ] `this` - download specific chapter using link from user. Make download chapter get chapter link instead manga link.
+    - [ ] `volume` - download all chapter of specified volume.
+    - [ ] `oneshot` - download all oneshots of manga (if exists).
+    - [ ] `all` - download all chapters.
+    - [ ] `join` (or `bundle` or `pack`) - download chapter into one file.
+    - [ ] `extension` (or `format`) - sets the extension of the outpud file. Add file support formats:
+        - [ ] epub (include metadata).
+        - [ ] pdf (include metadata).
 - [ ] Add interactive mode for `find` subcommand.
 - [ ] Add interactive mode for `download` subcommand.
 
