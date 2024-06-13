@@ -98,6 +98,29 @@ Check connection to MangaDex API:
 mdx ping
 ```
 
+## TODO 📌
+
+### Functionality
+
+- [ ] Remove Doujinshi from list in `find` subcommand and add `doujinshi` flag for show Doujinshi in list.
+- [ ] Add search filter for `find` subcommand.
+- [ ] Add flag `random` in `info` subcommand for get information about random manga.
+- [ ] Add flag `last` to `download` subcommand, which download last chapter.
+- [ ] Add flag `this` to `download` subcommand, which accepts a link to the manga chapter and downloads it.
+- [ ] Add flag `volume` to `download` subcommand, which accepts volume number of manga and downloads all chapter from volume.
+- [ ] Add flag `oneshot` to `download` subcommand, which downloads all oneshots.
+- [ ] Add flag `all` to `download` subcommand, which download all chapters.
+- [ ] Add flag `join` (or `bundle` or `pack`) to `download` subcommand, which downloads all chapters in one file.
+- [ ] Add flag `extension` (or `format`) to `download` subcommand, which sets the extension of the output file.
+- [ ] Add interactive mode for `find` subcommand.
+- [ ] Add interactive mode for `download` subcommand.
+
+### Code
+
+- [ ] Add tests for `mangadexapi` package.
+- [ ] Refactor `mangadexapi` package.
+- [ ] Refactor `cmd` package.
+
 ## License 📜
 
 This project is licensed under the MIT - see the LICENSE file for details.
