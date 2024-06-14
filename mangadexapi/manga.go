@@ -86,6 +86,16 @@ func (mi MangaInfo) Authors() string {
 	return strings.Join(authors, ", ")
 }
 
+func (mi MangaInfo) AuthorsArr() []string {
+	authors := []string{}
+	for _, relation := range mi.Relationships {
+		if relation.Type == "author" {
+			authors = append(authors, relation.Attributes.Name)
+		}
+	}
+	return authors
+}
+
 func (mi MangaInfo) Artists() string {
 	artists := []string{}
 	for _, relation := range mi.Relationships {
@@ -94,6 +104,20 @@ func (mi MangaInfo) Artists() string {
 		}
 	}
 	return strings.Join(artists, ", ")
+}
+
+func (mi MangaInfo) ArtistsArr() []string {
+	artists := []string{}
+	for _, relation := range mi.Relationships {
+		if relation.Type == "artist" {
+			artists = append(artists, relation.Attributes.Name)
+		}
+	}
+	return artists
+}
+
+func (mi MangaInfo) Publisher() string {
+	return mi.Attributes.PublicationDemographic
 }
 
 func (mi MangaInfo) Year() int {
@@ -124,6 +148,16 @@ func (mi MangaInfo) Tags() string {
 		}
 	}
 	return strings.Join(tags, ", ")
+}
+
+func (mi MangaInfo) TagsArr() []string {
+	tags := []string{}
+	for _, tagEntity := range mi.Attributes.Tags {
+		if tagEntity.Type == "tag" {
+			tags = append(tags, tagEntity.Attributes.Name["en"])
+		}
+	}
+	return tags
 }
 
 func (mi MangaInfo) Links() []string {

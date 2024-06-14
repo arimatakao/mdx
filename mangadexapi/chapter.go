@@ -52,6 +52,10 @@ func (c Chapter) UploadedBy() string {
 	return ""
 }
 
+func (c Chapter) Language() string {
+	return c.Attributes.TranslatedLanguage
+}
+
 func (c Chapter) isTranslatedByGroup(translateGroup string) bool {
 	return strings.Contains(c.getTranslator(), translateGroup)
 }
@@ -144,7 +148,7 @@ type ChapterFullInfo struct {
 }
 
 func (c ChapterFullInfo) Title() string {
-	return c.info.Attributes.Title
+	return c.info.Title()
 }
 
 func (c ChapterFullInfo) Number() string {
@@ -156,7 +160,7 @@ func (c ChapterFullInfo) Volume() string {
 }
 
 func (c ChapterFullInfo) Language() string {
-	return c.info.Attributes.TranslatedLanguage
+	return c.info.Language()
 }
 
 func (c ChapterFullInfo) Translator() string {
@@ -165,6 +169,10 @@ func (c ChapterFullInfo) Translator() string {
 
 func (c ChapterFullInfo) UploadedBy() string {
 	return c.info.UploadedBy()
+}
+
+func (c ChapterFullInfo) PagesCount() int {
+	return c.info.PagesCount()
 }
 
 func (c ChapterFullInfo) ImagesBaseUrl() string {

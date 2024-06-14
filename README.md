@@ -16,7 +16,8 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux***.
-- Download multiple chapters.
+- Download ***multiple chapters***.
+- Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Search manga.
 - Show information about manga.
 
@@ -103,7 +104,7 @@ mdx ping
 ### Functionality
 
 - [X] Remove Doujinshi from list in `find` subcommand and add `doujinshi` flag for show Doujinshi in list.
-- [ ] Add metadata for cbz downloaded archive.
+- [X] Add metadata for cbz downloaded archive.
 - [ ] Add search filter for `find` subcommand.
 - [ ] Add flag `random` in `info` subcommand for get information about random manga.
 - [ ] Add flag to `download`:

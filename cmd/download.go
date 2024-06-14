@@ -1,15 +1,14 @@
 package cmd
 
 import (
-	"archive/zip"
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/arimatakao/mdx/filekit"
+	"github.com/arimatakao/mdx/filekit/metadata"
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -140,11 +139,6 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	fmt.Println("Alternative title: ", mangaInfo.AltTitles())
 	fmt.Println("====")
 
-	err = os.MkdirAll(filepath.Join("", outputDir), os.ModePerm)
-	if err != nil {
-		fmt.Printf("error while creting directory: %v\n", err)
-		os.Exit(1)
-	}
 	for _, chapter := range chapters {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 		fmt.Fprintf(w, "Chapter\t: %s\n", chapter.Number())
@@ -158,37 +152,20 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(chapter.PngFiles)).
 			WithTitle("Downloading pages").Start()
 
-		filename := fmt.Sprintf("[%s] %s vol%s ch%s.cbz",
+		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
 			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
-
-		archive, err := os.Create(filepath.Join(outputDir, filename))
+		cbzFile, err := filekit.NewCBZFile(outputDir, filename)
 		if err != nil {
 			dlbar.Increment()
 			fmt.Printf("error while creating arhive: %v\n", err)
 		}
-
-		zipWriter := zip.NewWriter(archive)
+		defer cbzFile.Close()
 
 		files := chapter.PngFiles
 		if isJpgFileFormat {
 			files = chapter.JpgFiles
 		}
-
 		for i, imageFile := range files {
-			insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
-				strings.ReplaceAll(mangaInfo.Title("en"), " ", "_"),
-				chapter.Volume(),
-				strings.ReplaceAll(chapter.Number(), ".", "_"),
-				i+1,
-				imgExt)
-
-			w, err := zipWriter.Create(insideFilename)
-			if err != nil {
-				dlbar.Increment()
-				fmt.Printf("\nerror while creating file in arhive: %v\n", err)
-				continue
-			}
-
 			outputImage, err := c.DownloadImage(chapter.DownloadBaseURL,
 				chapter.HashId, imageFile, isJpgFileFormat)
 			if err != nil {
@@ -196,14 +173,24 @@ func downloadManga(cmd *cobra.Command, args []string) {
 				fmt.Printf("\nfailed to download image: %v\n", err)
 				continue
 			}
-			if _, err := io.Copy(w, outputImage); err != nil {
+
+			insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
+				strings.ReplaceAll(mangaInfo.Title("en"), " ", "_"),
+				chapter.Volume(),
+				strings.ReplaceAll(chapter.Number(), ".", "_"),
+				i+1,
+				imgExt)
+			if err := cbzFile.AddFile(insideFilename, outputImage); err != nil {
 				dlbar.Increment()
 				fmt.Printf("\nfailed to copy image in archive: %v\n", err)
 				continue
 			}
 			dlbar.Increment()
 		}
-		zipWriter.Close()
-		archive.Close()
+		err = cbzFile.
+			AddMetadata(metadata.NewCBZMetadata(MDX_USER_AGENT, mangaInfo, chapter))
+		if err != nil {
+			fmt.Printf("error while adding metadata to file: %v\n", err)
+		}
 	}
 }
