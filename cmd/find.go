@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
@@ -37,7 +36,8 @@ func find(cmd *cobra.Command, args []string) {
 	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinner, _ := pterm.DefaultSpinner.Start("Searching manga...")
-	response, err := c.Find(title, 25, 0, isDoujinshiAllow)
+	printedCount := 25
+	response, err := c.Find(title, printedCount, 0, isDoujinshiAllow)
 	if err != nil {
 		spinner.Fail("Failed to search manga")
 		fmt.Printf("\nerror while search manga: %v\n", err)
@@ -52,12 +52,11 @@ func find(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("\nTotal found: %d\n", response.Total)
 
-	for _, m := range response.Data {
+	for _, m := range response.List() {
 		fmt.Println("------------------------------")
 		printMangaInfo(m)
 	}
 
-	printedCount, _ := strconv.Atoi("25")
 	if response.Total > printedCount {
 		fmt.Println("==============================")
 		fmt.Printf("\nFull results: https://mangadex.org/search?q=%s\n", title)

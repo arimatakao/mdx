@@ -47,32 +47,32 @@ func getInfo(cmd *cobra.Command, args []string) {
 	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinner, _ := pterm.DefaultSpinner.Start("Fetching info...")
-	info, err := c.GetMangaInfo(mangaId)
+	resp, err := c.GetMangaInfo(mangaId)
 	if err != nil {
 		spinner.Fail("Failed to fetch manga info")
 		fmt.Printf("error while getting info: %v\n", err)
 		os.Exit(1)
 	}
 	spinner.Success("Fetched info")
-	printMangaInfo(info)
+	printMangaInfo(resp.MangaInfo())
 }
 
 func printMangaInfo(i mangadexapi.MangaInfo) {
-	fmt.Println("Title: ", i.Attributes.Title["en"])
-	fmt.Printf("Alternative titles: %s\n", i.GetAltTitles())
+	fmt.Println("Title: ", i.Title("en"))
+	fmt.Printf("Alternative titles: %s\n", i.AltTitles())
 	fmt.Println("Type: ", i.Type)
-	fmt.Println("Authors: ", i.GetAuthors())
-	fmt.Println("Artists: ", i.GetArtists())
-	fmt.Printf("Year: %d\n", i.Attributes.Year)
-	fmt.Println("Status: ", i.Attributes.Status)
-	fmt.Println("Original language: ", i.Attributes.OriginalLanguage)
-	fmt.Printf("Translated: %v\n", i.Attributes.AvailableTranslatedLanguages)
-	fmt.Printf("Tags: %s\n", i.GetTags())
+	fmt.Println("Authors: ", i.Authors())
+	fmt.Println("Artists: ", i.Artists())
+	fmt.Printf("Year: %d\n", i.Year())
+	fmt.Println("Status: ", i.Status())
+	fmt.Println("Original language: ", i.OriginalLanguage())
+	fmt.Printf("Translated: %v\n", i.TranslatedLanguages())
+	fmt.Printf("Tags: %s\n", i.Tags())
 	fmt.Println("Description:")
-	fmt.Println(i.Attributes.Description["en"])
+	fmt.Println(i.Description("en"))
 	fmt.Println("---")
 	fmt.Println("Read or Buy here:")
-	for _, v := range i.GetLinks() {
+	for _, v := range i.Links() {
 		fmt.Println(v)
 	}
 }

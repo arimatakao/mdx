@@ -111,13 +111,13 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	mangaInfo, err := c.GetMangaInfo(mangaId)
+	resp, err := c.GetMangaInfo(mangaId)
 	if err != nil {
 		spinnerMangaInfo.Fail("Failed to get manga info")
 		fmt.Printf("error while getting manga info: %v\n", err)
 		os.Exit(1)
 	}
-	mangaTitle := mangaInfo.Attributes.Title["en"]
+	mangaInfo := resp.MangaInfo()
 	spinnerMangaInfo.Success("Fetched manga info")
 
 	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
@@ -136,8 +136,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	fmt.Println("Manga title: ", mangaTitle)
-	fmt.Println("Alternative title: ", mangaInfo.GetAltTitles())
+	fmt.Println("Manga title: ", mangaInfo.Title("en"))
+	fmt.Println("Alternative title: ", mangaInfo.AltTitles())
 	fmt.Println("====")
 
 	err = os.MkdirAll(filepath.Join("", outputDir), os.ModePerm)
@@ -159,7 +159,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 			WithTitle("Downloading pages").Start()
 
 		filename := fmt.Sprintf("[%s] %s vol%s ch%s.cbz",
-			language, mangaTitle, chapter.Volume(), chapter.Number())
+			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
 
 		archive, err := os.Create(filepath.Join(outputDir, filename))
 		if err != nil {
@@ -176,7 +176,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 
 		for i, imageFile := range files {
 			insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
-				strings.ReplaceAll(mangaTitle, " ", "_"),
+				strings.ReplaceAll(mangaInfo.Title("en"), " ", "_"),
 				chapter.Volume(),
 				strings.ReplaceAll(chapter.Number(), ".", "_"),
 				i+1,
