@@ -101,6 +101,10 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		fmt.Println("error: Malformated chapters format")
 		os.Exit(0)
 	}
+
+	if isJpgFileFormat {
+		imgExt = "jpg"
+	}
 }
 
 func downloadManga(cmd *cobra.Command, args []string) {
