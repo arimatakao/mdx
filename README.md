@@ -113,6 +113,7 @@ mdx ping
     - [ ] `oneshot` - download all oneshots of manga (if exists).
     - [ ] `all` - download all chapters.
     - [ ] `join` (or `bundle` or `pack`) - download chapter into one file.
+    - [ ] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `extension` (or `format`) - sets the extension of the outpud file. Add file support formats:
         - [ ] epub (include metadata).
         - [ ] pdf (include metadata).
