@@ -27,9 +27,10 @@ const (
 )
 
 var (
-	ErrUnknown    = errors.New("unknown error")
-	ErrBadInput   = errors.New("bad input")
-	ErrConnection = errors.New("request is failed")
+	ErrUnknown          = errors.New("unknown error")
+	ErrBadInput         = errors.New("bad input")
+	ErrConnection       = errors.New("request is failed")
+	ErrUnexpectedHeader = errors.New("unexpected header in response")
 )
 
 func GetMangaIdFromUrl(link string) string {
@@ -237,6 +238,11 @@ func (a clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 
 	if resp.IsError() {
 		return nil, &respErr
+	}
+
+	h := resp.Header().Get("Content-Type")
+	if h != "image/jpeg" && h != "image/png" {
+		return nil, ErrUnexpectedHeader
 	}
 
 	return bytes.NewBuffer(resp.Body()), nil
