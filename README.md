@@ -126,6 +126,7 @@ mdx ping
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `mangadexapi` package.
 - [ ] Refactor `cmd` package.
+- [ ] Refactor `filekit` package.
 
 ## License 📜
 
