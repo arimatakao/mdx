@@ -17,7 +17,7 @@ import (
 var (
 	downloadCmd = &cobra.Command{
 		Use:     "download",
-		Aliases: []string{"dl"},
+		Aliases: []string{"dl", "save"},
 		Short:   "Download manga by URL",
 		PreRun:  checkDownloadArgs,
 		Run:     downloadManga,
@@ -30,13 +30,16 @@ var (
 	chaptersRange   string
 	lowestChapter   int
 	highestChapter  int
+	outputExt       string
 )
 
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
+	downloadCmd.Flags().StringVarP(&outputExt,
+		"ext", "e", "cbz", "choose output file format: cbz pdf")
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
-		"jpg", "j", false, "download compressed images for small archive size (default: false)")
+		"jpg", "j", false, "download compressed images for small output file size")
 	downloadCmd.Flags().StringVarP(&mangaurl,
 		"url", "u", "", "specify the URL for the manga")
 	downloadCmd.Flags().StringVarP(&outputDir,
@@ -104,6 +107,11 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	if isJpgFileFormat {
 		imgExt = "jpg"
 	}
+
+	if outputExt != filekit.CBZ_EXT && outputExt != filekit.PDF_EXT {
+		fmt.Printf("error: %s format of file is not supported\n", outputExt)
+		os.Exit(0)
+	}
 }
 
 func downloadManga(cmd *cobra.Command, args []string) {
@@ -149,48 +157,63 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(w, "Uploaded by\t: %s\n", chapter.UploadedBy())
 		w.Flush()
 
-		dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(chapter.PngFiles)).
-			WithTitle("Downloading pages").Start()
-
 		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
 			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
-		cbzFile, err := filekit.NewCBZFile(outputDir, filename)
-		if err != nil {
-			dlbar.Increment()
-			fmt.Printf("error while creating arhive: %v\n", err)
-		}
-		defer cbzFile.Close()
 
-		files := chapter.PngFiles
-		if isJpgFileFormat {
-			files = chapter.JpgFiles
-		}
-		for i, imageFile := range files {
-			outputImage, err := c.DownloadImage(chapter.DownloadBaseURL,
-				chapter.HashId, imageFile, isJpgFileFormat)
-			if err != nil {
-				dlbar.Increment()
-				fmt.Printf("\nfailed to download image: %v\n", err)
-				continue
-			}
-
-			insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
-				strings.ReplaceAll(mangaInfo.Title("en"), " ", "_"),
-				chapter.Volume(),
-				strings.ReplaceAll(chapter.Number(), ".", "_"),
-				i+1,
-				imgExt)
-			if err := cbzFile.AddFile(insideFilename, outputImage); err != nil {
-				dlbar.Increment()
-				fmt.Printf("\nfailed to copy image in archive: %v\n", err)
-				continue
-			}
-			dlbar.Increment()
-		}
-		err = cbzFile.
-			AddMetadata(metadata.NewCBZMetadata(MDX_USER_AGENT, mangaInfo, chapter))
+		containerFile, err := filekit.NewContainer(
+			outputExt,
+			outputDir, filename,
+			metadata.NewMetadata(MDX_USER_AGENT, mangaInfo, chapter))
 		if err != nil {
-			fmt.Printf("error while adding metadata to file: %v\n", err)
+			fmt.Printf("error while creating output file: %v\n", err)
+		}
+
+		err = downloadProcess(c, mangaInfo, chapter, containerFile, isJpgFileFormat)
+		if err != nil {
+			fmt.Printf("error while downloading chapter: %v\n", err)
+		}
+
+		err = containerFile.WriteOnDiskAndClose()
+		if err != nil {
+			fmt.Printf("error while saving %s on disk: %v\n", filename, err)
 		}
 	}
+}
+
+func downloadProcess(
+	client mangadexapi.Clientapi,
+	mangaInfo mangadexapi.MangaInfo,
+	chapter mangadexapi.ChapterFullInfo,
+	outputFile filekit.Container, isJpg bool) error {
+
+	files := chapter.PngFiles
+	if isJpg {
+		files = chapter.JpgFiles
+	}
+
+	dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(files)).
+		WithTitle("Downloading pages...").Start()
+	defer dlbar.Stop()
+
+	for i, imageFile := range files {
+		outputImage, err := client.DownloadImage(chapter.DownloadBaseURL,
+			chapter.HashId, imageFile, isJpgFileFormat)
+		if err != nil {
+			dlbar.UpdateTitle("Failed downloading").Stop()
+			return err
+		}
+
+		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
+			strings.ReplaceAll(mangaInfo.Title("en"), " ", "_"),
+			chapter.Volume(),
+			strings.ReplaceAll(chapter.Number(), ".", "_"),
+			i+1,
+			imgExt)
+		if err := outputFile.AddFile(insideFilename, outputImage); err != nil {
+			dlbar.UpdateTitle("Failed downloading").Stop()
+			return err
+		}
+		dlbar.Increment()
+	}
+	return nil
 }

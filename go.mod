@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/go-resty/resty/v2 v2.13.1
 	github.com/pterm/pterm v0.12.79
+	github.com/signintech/gopdf v0.26.0
 	github.com/spf13/cobra v1.8.0
 )
 
@@ -17,6 +18,8 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/phpdave11/gofpdi v1.0.14-0.20211212211723-1f10f9844311 // indirect
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect

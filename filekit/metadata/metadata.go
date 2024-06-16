@@ -6,11 +6,19 @@ import (
 	"time"
 )
 
-type CBZMetadata struct {
+type Metadata struct {
 	// ComicBookInfo format
-	ComicBookMetadata
+	CBI ComicBookMetadata
 	// ComicRack old metadata
-	ComicInfoMetadata
+	CI ComicInfoMetadata
+	// Plain metadata
+	P PlainMetadata
+}
+
+type PlainMetadata struct {
+	Authors string
+	Artists string
+	Tags    string
 }
 
 type ComicInfoMetadata struct {
@@ -62,6 +70,7 @@ type MangaProvider interface {
 	ArtistsArr() []string
 	Artists() string
 	TagsArr() []string
+	Tags() string
 }
 
 type ChapterProvider interface {
@@ -72,7 +81,7 @@ type ChapterProvider interface {
 	PagesCount() int
 }
 
-func NewCBZMetadata(appId string, m MangaProvider, c ChapterProvider) CBZMetadata {
+func NewMetadata(appId string, m MangaProvider, c ChapterProvider) Metadata {
 
 	credits := []Credit{}
 	for _, au := range m.AuthorsArr() {
@@ -93,8 +102,8 @@ func NewCBZMetadata(appId string, m MangaProvider, c ChapterProvider) CBZMetadat
 	mangaTitle := fmt.Sprintf("%s | %s vol%s ch%s",
 		c.Language(), m.Title("en"), c.Volume(), c.Number())
 
-	metadata := CBZMetadata{
-		ComicBookMetadata: ComicBookMetadata{
+	metadata := Metadata{
+		CBI: ComicBookMetadata{
 			AppID:        appId,
 			LastModified: time.Now().UTC().String(),
 			ComicBookInfoData: ComicBookInfo{
@@ -108,7 +117,7 @@ func NewCBZMetadata(appId string, m MangaProvider, c ChapterProvider) CBZMetadat
 				Tags:      m.TagsArr(),
 			},
 		},
-		ComicInfoMetadata: ComicInfoMetadata{
+		CI: ComicInfoMetadata{
 			XMLName:     xml.Name{Local: "ComicInfo"},
 			Title:       mangaTitle,
 			Number:      c.Number(),
@@ -123,6 +132,11 @@ func NewCBZMetadata(appId string, m MangaProvider, c ChapterProvider) CBZMetadat
 			Format:      "Comic Book",
 			Manga:       "Yes",
 			Summary:     m.Description("en"),
+		},
+		P: PlainMetadata{
+			Authors: m.Authors(),
+			Artists: m.Artists(),
+			Tags:    m.Tags(),
 		},
 	}
 

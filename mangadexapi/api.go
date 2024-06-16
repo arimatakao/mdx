@@ -1,10 +1,8 @@
 package mangadexapi
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,10 +28,15 @@ var (
 	ErrUnknown          = errors.New("unknown error")
 	ErrBadInput         = errors.New("bad input")
 	ErrConnection       = errors.New("request is failed")
-	ErrUnexpectedHeader = errors.New("unexpected header in response")
+	ErrUnexpectedHeader = errors.New("unexpected response header value")
 )
 
 func GetMangaIdFromUrl(link string) string {
+
+	if !strings.HasPrefix(link, "https://") && !strings.HasPrefix(link, "http://") {
+		link = "https://" + link
+	}
+
 	parsedUrl, err := url.Parse(link)
 	if err != nil {
 		return ""
@@ -59,7 +62,7 @@ func GetMangaIdFromArg(args []string) string {
 	return ""
 }
 
-type clientapi struct {
+type Clientapi struct {
 	c *resty.Client
 }
 
@@ -69,7 +72,7 @@ func (l silentLogger) Errorf(format string, v ...interface{}) {}
 func (l silentLogger) Warnf(format string, v ...interface{})  {}
 func (l silentLogger) Debugf(format string, v ...interface{}) {}
 
-func NewClient(userAgent string) clientapi {
+func NewClient(userAgent string) Clientapi {
 	if userAgent == "" {
 		userAgent = default_useragent
 	}
@@ -81,12 +84,12 @@ func NewClient(userAgent string) clientapi {
 		SetBaseURL(base_url).
 		SetHeader("User-Agent", userAgent)
 
-	return clientapi{
+	return Clientapi{
 		c: c,
 	}
 }
 
-func (a clientapi) Ping() bool {
+func (a Clientapi) Ping() bool {
 	resp, err := a.c.R().Get(health_path)
 	if err != nil {
 		return false
@@ -99,7 +102,7 @@ func (a clientapi) Ping() bool {
 	return true
 }
 
-func (a clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) (ResponseMangaList, error) {
+func (a Clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) (ResponseMangaList, error) {
 	if title == "" || limit == 0 || offset < 0 {
 		return ResponseMangaList{}, ErrBadInput
 	}
@@ -131,7 +134,7 @@ func (a clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) 
 	return mangaList, nil
 }
 
-func (a clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
+func (a Clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
 	if mangaId == "" {
 		return MangaInfoResponse{}, ErrBadInput
 	}
@@ -156,7 +159,7 @@ func (a clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
 	return info, nil
 }
 
-func (a clientapi) GetChaptersList(limit, offset int, mangaId, language string) (ResponseChapterList, error) {
+func (a Clientapi) GetChaptersList(limit, offset int, mangaId, language string) (ResponseChapterList, error) {
 
 	if mangaId == "" {
 		return ResponseChapterList{}, ErrBadInput
@@ -187,7 +190,7 @@ func (a clientapi) GetChaptersList(limit, offset int, mangaId, language string) 
 	return list, nil
 }
 
-func (a clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages, error) {
+func (a Clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages, error) {
 	if chapterId == "" {
 		return ResponseChapterImages{}, ErrBadInput
 	}
@@ -211,8 +214,8 @@ func (a clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages,
 	return list, nil
 }
 
-func (a clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
-	isJpg bool) (io.Reader, error) {
+func (a Clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
+	isJpg bool) ([]byte, error) {
 	if baseUrl == "" || chapterHash == "" || imageFilename == "" {
 		return nil, ErrBadInput
 	}
@@ -245,10 +248,10 @@ func (a clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 		return nil, ErrUnexpectedHeader
 	}
 
-	return bytes.NewBuffer(resp.Body()), nil
+	return resp.Body(), nil
 }
 
-func (a clientapi) GetFullChaptersInfo(mangaId, language, translationGroup string,
+func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup string,
 	lowestChapter, highestChapter int) ([]ChapterFullInfo, error) {
 
 	if mangaId == "" ||
@@ -262,12 +265,9 @@ func (a clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 	chaptersInfo := []ChapterFullInfo{}
 
 	lowBound := lowestChapter
-	if lowBound <= 10 {
-		lowBound = 0
-	}
 	highBound := highestChapter
-	if highBound < 10 {
-		highBound = 10
+	if highBound-lowBound < 10 {
+		highBound += 10
 	}
 	for lowBound <= highBound {
 		query := fmt.Sprintf(
