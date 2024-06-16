@@ -120,6 +120,11 @@ func (l ResponseChapterList) GetChapters(lowest, highest int, transgp string) ([
 		}
 
 		if num >= lowest && num <= highest && chapter.isTranslatedByGroup(transgp) {
+			if len(found) != 0 {
+				if found[len(found)-1].Number() == chapter.Number() {
+					continue
+				}
+			}
 			found = append(found, chapter)
 		}
 	}

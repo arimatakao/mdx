@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"io"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -13,7 +14,8 @@ import (
 
 type pdfFile struct {
 	pdf        *gopdf.GoPdf
-	outputfile string
+	outputDir  string
+	outputFile string
 }
 
 func NewPdfFile(outputDir, fileName string, m metadata.Metadata) (pdfFile, error) {
@@ -39,13 +41,19 @@ func NewPdfFile(outputDir, fileName string, m metadata.Metadata) (pdfFile, error
 
 	return pdfFile{
 		pdf:        pdf,
-		outputfile: filepath.Join(outputDir, fileName),
+		outputDir:  outputDir,
+		outputFile: fileName,
 	}, nil
 }
 
 func (p pdfFile) WriteOnDiskAndClose() error {
 
-	err := p.pdf.WritePdf(p.outputfile)
+	err := os.MkdirAll(p.outputDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = p.pdf.WritePdf(filepath.Join(p.outputDir, p.outputFile))
 	if err != nil {
 		return err
 	}

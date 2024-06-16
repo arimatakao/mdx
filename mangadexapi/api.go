@@ -257,18 +257,18 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 	if mangaId == "" ||
 		language == "" ||
 		lowestChapter > highestChapter ||
-		lowestChapter < 0 || highestChapter < 0 {
+		lowestChapter < 0 ||
+		highestChapter < 0 ||
+		highestChapter < lowestChapter {
 		return []ChapterFullInfo{}, ErrBadInput
 	}
 
 	chapters := []Chapter{}
 	chaptersInfo := []ChapterFullInfo{}
 
-	lowBound := lowestChapter
-	highBound := highestChapter
-	if highBound-lowBound < 10 {
-		highBound += 10
-	}
+	lowBound := (lowestChapter / 10) * 10
+	highBound := ((highestChapter + 11) / 10) * 10
+
 	for lowBound <= highBound {
 		query := fmt.Sprintf(
 			"limit=%d&offset=%d&translatedLanguage[]=%s"+
@@ -296,7 +296,9 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 
 		chapters = append(chapters, found...)
 		lowBound += 10
-		highBound += extra
+		if extra != 0 {
+			highBound += ((extra + 11) / 10) * 10
+		}
 	}
 
 	for _, chapter := range chapters {
