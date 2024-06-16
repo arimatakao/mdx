@@ -16,10 +16,11 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux***.
-- Download ***multiple chapters***.
+- Downloads ***multiple chapters***.
+- Saving manga in ***CBZ and PDF formats***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
-- Search manga.
-- Show information about manga.
+- Searches manga.
+- Displays information about manga.
 
 ## Installation ⚙️
 
@@ -48,24 +49,29 @@ mdx download -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/
 mdx dl -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 # or
 mdx dl https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+# or
+mdx dl mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+
+# download pdf format instead cbz
+mdx dl -e pdf mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
 # download specific chapter
-mdx dl -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -c 123 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # download range chapters
-mdx dl -c 12-34 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+mdx dl -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
 # specify language (for get available languages execute info subcommand)
-mdx dl -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -l it mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify output directory
-mdx dl -o your/dir -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -o your/dir mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify translation
-mdx dl -t Marcelo -o your/dir -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -t "Some Group" mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # download compressed version (lower image quality and file size)
-mdx dl -j -t Marcelo -o your/dir -l it -c 123 https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -j mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 ```
 
 Get help about subcommands and flags:
@@ -89,8 +95,9 @@ mdx f -t "Manga Title"
 Get detail information about manga:
 
 ```shell
-mdx info -u "https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk"
-mdx info "https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk"
+mdx info -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+# or
+mdx info mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 ```
 
 Check connection to MangaDex API:
@@ -111,13 +118,14 @@ mdx ping
     - [ ] `last` - download latest chapter.
     - [ ] `this` - download specific chapter using link from user. Make download chapter get chapter link instead manga link.
     - [ ] `volume` - download all chapter of specified volume.
-    - [ ] `oneshot` - download all oneshots of manga (if exists).
+    - [ ] `volume-range` - download all chapter of specified volume range.
+    - [ ] `oneshot` - download all oneshots of manga (if available).
     - [ ] `all` - download all chapters.
     - [ ] `join` (or `bundle` or `pack`) - download chapter into one file.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `extension` (or `format`) - sets the extension of the outpud file. Add file support formats:
+        - [X] pdf (include metadata).
         - [ ] epub (include metadata).
-        - [ ] pdf (include metadata).
 - [ ] Add interactive mode for `find` subcommand.
 - [ ] Add interactive mode for `download` subcommand.
 
@@ -139,3 +147,4 @@ This project uses the following third-party libraries:
 - Cobra (https://github.com/spf13/cobra) - Licensed under the Apache License 2.0
 - Resty (https://github.com/go-resty/resty) - Licensed under the MIT
 - PTerm (https://github.com/pterm/pterm) - Licensed under the MIT
+- gopdf (https://github.com/signintech/gopdf) - Licensed under the MIT
