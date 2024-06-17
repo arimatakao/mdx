@@ -13,62 +13,66 @@ import (
 )
 
 type cbzArchive struct {
-	buf       *bytes.Buffer
-	writer    *zip.Writer
-	outputDir string
+	buf    *bytes.Buffer
+	writer *zip.Writer
 }
 
 // fileName without extension
-func NewCBZArchive(outputDir, fileName string, m metadata.Metadata) (cbzArchive, error) {
-	fileName += ".cbz"
-
+func newCBZArchive() (cbzArchive, error) {
 	buf := new(bytes.Buffer)
 
 	zipWriter := zip.NewWriter(buf)
 
 	c := cbzArchive{
-		buf:       buf,
-		writer:    zipWriter,
-		outputDir: filepath.Join(outputDir, fileName),
-	}
-
-	// ComicBookInfo metadata
-	comment, err := json.Marshal(m.CBI)
-	if err != nil {
-		return cbzArchive{}, err
-	}
-	err = c.writer.SetComment(string(comment))
-	if err != nil {
-		return cbzArchive{}, err
-	}
-
-	// ComicRack metadata
-	w, err := c.writer.Create("ComicInfo.xml")
-	if err != nil {
-		return cbzArchive{}, err
-	}
-
-	comicInfoContent, err := xml.Marshal(m.CI)
-	if err != nil {
-		return cbzArchive{}, err
-	}
-
-	cireader := bytes.NewReader(comicInfoContent)
-	if _, err := io.Copy(w, cireader); err != nil {
-		return cbzArchive{}, err
+		buf:    buf,
+		writer: zipWriter,
 	}
 
 	return c, nil
 }
 
 // ALWAYS close archive after all operations
-func (c cbzArchive) WriteOnDiskAndClose() error {
-	err := c.writer.Close()
+func (c cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
+	m metadata.Metadata) error {
+	// ComicBookInfo metadata
+	comment, err := json.Marshal(m.CBI)
+	if err != nil {
+		return err
+	}
+	err = c.writer.SetComment(string(comment))
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(c.outputDir, c.buf.Bytes(), os.ModePerm)
+	// ComicRack metadata
+	w, err := c.writer.Create("ComicInfo.xml")
+	if err != nil {
+		return err
+	}
+
+	comicInfoContent, err := xml.Marshal(m.CI)
+	if err != nil {
+		return err
+	}
+
+	cireader := bytes.NewReader(comicInfoContent)
+	if _, err := io.Copy(w, cireader); err != nil {
+		return err
+	}
+
+	err = c.writer.Close()
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(outputDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	outputPath := filepath.Join(outputDir, outputFileName+".cbz")
+
+	return os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
 }
 
 func (c cbzArchive) AddFile(fileName string, src []byte) error {

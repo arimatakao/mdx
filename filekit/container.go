@@ -14,18 +14,17 @@ const (
 var ErrExtensionNotSupport = errors.New("extension container is not supported")
 
 type Container interface {
-	WriteOnDiskAndClose() error
+	WriteOnDiskAndClose(outputDir string, outputFileName string, m metadata.Metadata) error
 	AddFile(fileName string, imageBytes []byte) error
 }
 
-func NewContainer(extension string, outputDir, fileName string,
-	m metadata.Metadata) (Container, error) {
+func NewContainer(extension string) (Container, error) {
 
 	switch extension {
 	case CBZ_EXT:
-		return NewCBZArchive(outputDir, fileName, m)
+		return newCBZArchive()
 	case PDF_EXT:
-		return NewPdfFile(outputDir, fileName, m)
+		return newPdfFile()
 	}
 
 	return nil, ErrExtensionNotSupport

@@ -18,6 +18,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 - Works on ***Windows, MacOS, Linux***.
 - Downloads ***multiple chapters***.
 - Saving manga in ***CBZ and PDF formats***.
+- Saving multiple chapters in ***one file***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Searches manga.
 - Displays information about manga.
@@ -40,7 +41,7 @@ go install github.com/arimatakao/mdx@latest
 Download manga:
 
 ```shell
-# get information about available flags
+# get help
 mdx download --help
 
 # by default 1 chapter is downloading
@@ -61,7 +62,10 @@ mdx dl -c 123 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 # download range chapters
 mdx dl -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
-# specify language (for get available languages execute info subcommand)
+# download range chapters and merge in one file
+mdx dl -m -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+
+# specify language, by default is english (for get available languages execute info subcommand)
 mdx dl -l it mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify output directory
@@ -121,7 +125,7 @@ mdx ping
     - [ ] `volume-range` - download all chapter of specified volume range.
     - [ ] `oneshot` - download all oneshots of manga (if available).
     - [ ] `all` - download all chapters.
-    - [ ] `join` (or `bundle` or `pack`) - download chapter into one file.
+    - [X] `merge` - download chapter in one file.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `extension` (or `format`) - sets the extension of the outpud file. Add file support formats:
         - [X] pdf (include metadata).

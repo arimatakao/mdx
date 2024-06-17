@@ -3,7 +3,6 @@ package filekit
 import (
 	"bytes"
 	"image"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -13,22 +12,27 @@ import (
 )
 
 type pdfFile struct {
-	pdf        *gopdf.GoPdf
-	outputDir  string
-	outputFile string
+	pdf *gopdf.GoPdf
 }
 
-func NewPdfFile(outputDir, fileName string, m metadata.Metadata) (pdfFile, error) {
-	fileName += ".pdf"
+func newPdfFile() (pdfFile, error) {
 
 	pdf := new(gopdf.GoPdf)
 	pdf.Start(gopdf.Config{
 		PageSize: *gopdf.PageSizeA4,
 	})
 
+	pdf.SetNoCompression()
+
+	return pdfFile{
+		pdf: pdf,
+	}, nil
+}
+
+func (p pdfFile) WriteOnDiskAndClose(outputDir, outputFileName string, m metadata.Metadata) error {
 	author := m.P.Authors + " | " + m.P.Artists
 
-	pdf.SetInfo(gopdf.PdfInfo{
+	p.pdf.SetInfo(gopdf.PdfInfo{
 		Title:        m.CI.Title,
 		Author:       author,
 		Subject:      m.CBI.ComicBookInfoData.Title,
@@ -37,23 +41,12 @@ func NewPdfFile(outputDir, fileName string, m metadata.Metadata) (pdfFile, error
 		CreationDate: time.Now(),
 	})
 
-	pdf.SetNoCompression()
-
-	return pdfFile{
-		pdf:        pdf,
-		outputDir:  outputDir,
-		outputFile: fileName,
-	}, nil
-}
-
-func (p pdfFile) WriteOnDiskAndClose() error {
-
-	err := os.MkdirAll(p.outputDir, os.ModePerm)
+	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = p.pdf.WritePdf(filepath.Join(p.outputDir, p.outputFile))
+	err = p.pdf.WritePdf(filepath.Join(outputDir, outputFileName+".pdf"))
 	if err != nil {
 		return err
 	}
@@ -61,8 +54,7 @@ func (p pdfFile) WriteOnDiskAndClose() error {
 }
 
 func (p pdfFile) AddFile(fileName string, imageBytes []byte) error {
-	buf := bytes.NewBuffer(imageBytes)
-	imgWidth, imgHeight, err := getImageDimensions(buf)
+	imgWidth, imgHeight, err := getImageDimensions(imageBytes)
 	if err != nil {
 		return err
 	}
@@ -90,8 +82,9 @@ func (p pdfFile) AddFile(fileName string, imageBytes []byte) error {
 	return nil
 }
 
-func getImageDimensions(img io.Reader) (float64, float64, error) {
-	config, _, err := image.DecodeConfig(img)
+func getImageDimensions(img []byte) (float64, float64, error) {
+	buf := bytes.NewBuffer(img)
+	config, _, err := image.DecodeConfig(buf)
 	if err != nil {
 		return 0, 0, err
 	}

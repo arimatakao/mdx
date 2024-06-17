@@ -30,6 +30,7 @@ var (
 	chaptersRange   string
 	lowestChapter   int
 	highestChapter  int
+	isMergeChapters bool
 	outputExt       string
 )
 
@@ -38,8 +39,6 @@ func init() {
 
 	downloadCmd.Flags().StringVarP(&outputExt,
 		"ext", "e", "cbz", "choose output file format: cbz pdf")
-	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
-		"jpg", "j", false, "download compressed images for small output file size")
 	downloadCmd.Flags().StringVarP(&mangaurl,
 		"url", "u", "", "specify the URL for the manga")
 	downloadCmd.Flags().StringVarP(&outputDir,
@@ -50,6 +49,10 @@ func init() {
 		"translated-by", "t", "", "specify part of name translation group")
 	downloadCmd.Flags().StringVarP(&chaptersRange,
 		"chapter", "c", "1", "specify chapters")
+	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
+		"jpg", "j", false, "download compressed images for small output file size")
+	downloadCmd.Flags().BoolVarP(&isMergeChapters,
+		"merge", "m", false, "merge downloaded chapters into one file")
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
@@ -147,37 +150,86 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	fmt.Println("Alternative title: ", mangaInfo.AltTitles())
 	fmt.Println("====")
 
+	if isMergeChapters {
+		downloadMergeChapters(c,
+			mangaInfo, chapters, outputExt, MDX_USER_AGENT, isJpgFileFormat)
+	} else {
+		downloadChapters(c,
+			mangaInfo, chapters, outputExt, MDX_USER_AGENT, isJpgFileFormat)
+	}
+}
+
+func downloadMergeChapters(client mangadexapi.Clientapi,
+	mangaInfo mangadexapi.MangaInfo,
+	chapters []mangadexapi.ChapterFullInfo,
+	outputExtension, userAgent string,
+	isJpg bool) {
+
+	containerFile, err := filekit.NewContainer(outputExtension)
+	if err != nil {
+		fmt.Printf("error while creating output file: %v\n", err)
+	}
+
 	for _, chapter := range chapters {
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-		fmt.Fprintf(w, "Chapter\t: %s\n", chapter.Number())
-		fmt.Fprintf(w, "Chapter title\t: %s\n", chapter.Title())
-		fmt.Fprintf(w, "Volume\t: %s\n", chapter.Volume())
-		fmt.Fprintf(w, "Language\t: %s\n", chapter.Language())
-		fmt.Fprintf(w, "Translated by\t: %s\n", chapter.Translator())
-		fmt.Fprintf(w, "Uploaded by\t: %s\n", chapter.UploadedBy())
-		w.Flush()
+		printChapterInfo(chapter)
 
-		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
-			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
+		err = downloadProcess(client, mangaInfo, chapter, containerFile, isJpg)
+		if err != nil {
+			fmt.Printf("\nerror while downloading chapter: %v\n", err)
+			os.Exit(1)
+		}
+	}
 
-		containerFile, err := filekit.NewContainer(
-			outputExt,
-			outputDir, filename,
-			metadata.NewMetadata(MDX_USER_AGENT, mangaInfo, chapter))
+	firstChapter := chapters[0].Number()
+	lastChapter := chapters[len(chapters)-1].Number()
+
+	filename := fmt.Sprintf("[%s] %s ch%s-%s",
+		language, mangaInfo.Title("en"), firstChapter, lastChapter)
+	metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapters[0])
+	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo)
+	if err != nil {
+		fmt.Printf("error while saving %s on disk: %v\n", filename, err)
+	}
+}
+
+func downloadChapters(client mangadexapi.Clientapi,
+	mangaInfo mangadexapi.MangaInfo,
+	chapters []mangadexapi.ChapterFullInfo,
+	outputExtension, userAgent string,
+	isJpg bool) {
+
+	for _, chapter := range chapters {
+		printChapterInfo(chapter)
+
+		containerFile, err := filekit.NewContainer(outputExtension)
 		if err != nil {
 			fmt.Printf("error while creating output file: %v\n", err)
 		}
 
-		err = downloadProcess(c, mangaInfo, chapter, containerFile, isJpgFileFormat)
+		err = downloadProcess(client, mangaInfo, chapter, containerFile, isJpg)
 		if err != nil {
 			fmt.Printf("error while downloading chapter: %v\n", err)
 		}
 
-		err = containerFile.WriteOnDiskAndClose()
+		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
+			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
+		metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapter)
+		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo)
 		if err != nil {
 			fmt.Printf("error while saving %s on disk: %v\n", filename, err)
 		}
 	}
+}
+
+func printChapterInfo(c mangadexapi.ChapterFullInfo) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Fprintf(w, "Chapter\t: %s\n", c.Number())
+	fmt.Fprintf(w, "Chapter title\t: %s\n", c.Title())
+	fmt.Fprintf(w, "Volume\t: %s\n", c.Volume())
+	fmt.Fprintf(w, "Language\t: %s\n", c.Language())
+	fmt.Fprintf(w, "Translated by\t: %s\n", c.Translator())
+	fmt.Fprintf(w, "Uploaded by\t: %s\n", c.UploadedBy())
+	w.Flush()
 }
 
 func downloadProcess(
