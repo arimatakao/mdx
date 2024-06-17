@@ -9,7 +9,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/arimatakao/mdx/total)
 ![GitHub Repo stars](https://img.shields.io/github/stars/arimatakao/mdx)
 
-![demo.gif](./.github/assets/demo.gif)
+![demo v1.4.0](./.github/assets/demo.gif)
 
 </div>
 
