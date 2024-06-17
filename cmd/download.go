@@ -111,7 +111,9 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		imgExt = "jpg"
 	}
 
-	if outputExt != filekit.CBZ_EXT && outputExt != filekit.PDF_EXT {
+	if outputExt != filekit.CBZ_EXT &&
+		outputExt != filekit.PDF_EXT &&
+		outputExt != filekit.EPUB_EXT {
 		fmt.Printf("error: %s format of file is not supported\n", outputExt)
 		os.Exit(0)
 	}
@@ -168,6 +170,7 @@ func downloadMergeChapters(client mangadexapi.Clientapi,
 	containerFile, err := filekit.NewContainer(outputExtension)
 	if err != nil {
 		fmt.Printf("error while creating output file: %v\n", err)
+		os.Exit(1)
 	}
 
 	for _, chapter := range chapters {
@@ -189,6 +192,7 @@ func downloadMergeChapters(client mangadexapi.Clientapi,
 	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo)
 	if err != nil {
 		fmt.Printf("error while saving %s on disk: %v\n", filename, err)
+		os.Exit(1)
 	}
 }
 
@@ -204,11 +208,13 @@ func downloadChapters(client mangadexapi.Clientapi,
 		containerFile, err := filekit.NewContainer(outputExtension)
 		if err != nil {
 			fmt.Printf("error while creating output file: %v\n", err)
+			os.Exit(1)
 		}
 
 		err = downloadProcess(client, mangaInfo, chapter, containerFile, isJpg)
 		if err != nil {
 			fmt.Printf("error while downloading chapter: %v\n", err)
+			os.Exit(1)
 		}
 
 		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
@@ -217,6 +223,7 @@ func downloadChapters(client mangadexapi.Clientapi,
 		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo)
 		if err != nil {
 			fmt.Printf("error while saving %s on disk: %v\n", filename, err)
+			os.Exit(1)
 		}
 	}
 }

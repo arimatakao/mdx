@@ -17,7 +17,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 - Works on ***Windows, MacOS, Linux***.
 - Downloads ***multiple chapters***.
-- Saving manga in ***CBZ and PDF formats***.
+- Saving manga in ***CBZ, PDF, EPUB formats***.
 - Saving multiple chapters in ***one file***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Searches manga.
@@ -127,9 +127,9 @@ mdx ping
     - [ ] `all` - download all chapters.
     - [X] `merge` - download chapter in one file.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
-    - [ ] `extension` (or `format`) - sets the extension of the outpud file. Add file support formats:
+    - [X] `extension` - sets the extension of the outpud file. Add file support formats:
         - [X] pdf (include metadata).
-        - [ ] epub (include metadata).
+        - [X] epub (include metadata).
 - [ ] Add interactive mode for `find` subcommand.
 - [ ] Add interactive mode for `download` subcommand.
 
@@ -152,3 +152,4 @@ This project uses the following third-party libraries:
 - Resty (https://github.com/go-resty/resty) - Licensed under the MIT
 - PTerm (https://github.com/pterm/pterm) - Licensed under the MIT
 - gopdf (https://github.com/signintech/gopdf) - Licensed under the MIT
+- go-epub (https://github.com/go-shiori/go-epub) - Licensed under the MIT

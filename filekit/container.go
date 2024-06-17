@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	CBZ_EXT = "cbz"
-	PDF_EXT = "pdf"
+	CBZ_EXT  = "cbz"
+	PDF_EXT  = "pdf"
+	EPUB_EXT = "epub"
 )
 
 var ErrExtensionNotSupport = errors.New("extension container is not supported")
@@ -25,6 +26,8 @@ func NewContainer(extension string) (Container, error) {
 		return newCBZArchive()
 	case PDF_EXT:
 		return newPdfFile()
+	case EPUB_EXT:
+		return newEpubArchive()
 	}
 
 	return nil, ErrExtensionNotSupport
