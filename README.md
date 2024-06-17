@@ -28,7 +28,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 1. Download `.tar.gz` archive from [releases page](https://github.com/arimatakao/mdx/releases).
 2. Unarchive the `.tar.gz` file you downloaded.
 
-Open unarhived folder and execute `mdx` file for use application.
+Open unarchived folder and execute `mdx` file for use application.
 
 Also, you can install the application with `go`:
 
