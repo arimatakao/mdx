@@ -28,7 +28,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 1. Download `.tar.gz` archive from [releases page](https://github.com/arimatakao/mdx/releases).
 2. Unarchive the `.tar.gz` file.
 
-Open the unarchived folder and execute `mdx` file to use the application.
+Open the unarchived folder and execute the `mdx` file to use the application.
 
 You can also install the application with `go`:
 
@@ -59,7 +59,7 @@ mdx dl -e pdf mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 # download a specific chapter
 mdx dl -c 123 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
-# download range of chapters
+# download a range of chapters
 mdx dl -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
 # download a range of chapters and merge them in one file
