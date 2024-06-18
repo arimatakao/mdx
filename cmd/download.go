@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/arimatakao/mdx/filekit"
 	"github.com/arimatakao/mdx/filekit/metadata"
@@ -53,6 +52,10 @@ func init() {
 		"jpg", "j", false, "download compressed images for small output file size")
 	downloadCmd.Flags().BoolVarP(&isMergeChapters,
 		"merge", "m", false, "merge downloaded chapters into one file")
+
+	e = pterm.Error
+	optionPrint = pterm.NewStyle(pterm.FgGreen, pterm.Bold)
+	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
@@ -68,14 +71,14 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	}
 
 	if mangaId == "" {
-		fmt.Println("error: Malformated URL")
+		e.Println("Malformated URL")
 		os.Exit(0)
 	}
 
 	singleChapter, err := strconv.Atoi(chaptersRange)
 	if err == nil {
 		if singleChapter < 0 {
-			fmt.Println("error: Malformated chapters format")
+			e.Println("Malformated chapters format")
 			os.Exit(0)
 		}
 
@@ -84,18 +87,18 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	} else if nums := strings.Split(chaptersRange, "-"); len(nums) == 2 {
 		lowest, err := strconv.Atoi(nums[0])
 		if err != nil {
-			fmt.Println("error: Malformated chapters format")
+			e.Println("Malformated chapters format")
 			os.Exit(0)
 		}
 
 		highest, err := strconv.Atoi(nums[1])
 		if err != nil {
-			fmt.Println("error: Malformated chapters format")
+			e.Println("Malformated chapters format")
 			os.Exit(0)
 		}
 
 		if lowest >= highest {
-			fmt.Println("error: Malformated chapters format")
+			e.Println("Malformated chapters format")
 			os.Exit(0)
 		}
 
@@ -103,7 +106,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		highestChapter = highest
 
 	} else {
-		fmt.Println("error: Malformated chapters format")
+		e.Println("Malformated chapters format")
 		os.Exit(0)
 	}
 
@@ -114,7 +117,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	if outputExt != filekit.CBZ_EXT &&
 		outputExt != filekit.PDF_EXT &&
 		outputExt != filekit.EPUB_EXT {
-		fmt.Printf("error: %s format of file is not supported\n", outputExt)
+		e.Printf("%s format of file is not supported\n", outputExt)
 		os.Exit(0)
 	}
 }
@@ -126,7 +129,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	resp, err := c.GetMangaInfo(mangaId)
 	if err != nil {
 		spinnerMangaInfo.Fail("Failed to get manga info")
-		fmt.Printf("error while getting manga info: %v\n", err)
+		e.Println("While getting manga info, maybe you get malformated link")
 		os.Exit(1)
 	}
 	mangaInfo := resp.MangaInfo()
@@ -137,22 +140,18 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		lowestChapter, highestChapter)
 	if err != nil {
 		spinnerChapInfo.Fail("Failed to get manga info")
-		fmt.Printf("error while getting manga chapters: %v\n", err)
+		e.Printf("While getting manga chapters: %v\n", err)
 		os.Exit(1)
 	}
 	spinnerChapInfo.Success("Fetched chapters info")
 
 	if len(chapters) == 0 {
-		fmt.Printf("chapters %s not found, try another "+
+		e.Printf("Chapters %s not found, try another "+
 			"range, language, translation group etc.\n", chaptersRange)
 		os.Exit(0)
 	}
 
-	fmt.Println("Manga title: ", mangaInfo.Title("en"))
-	fmt.Println("Alternative title: ", mangaInfo.AltTitles())
-	fmt.Println("Read or Buy here:")
-	fmt.Println(mangaInfo.Links())
-	fmt.Println("====")
+	printShortMangaInfo(mangaInfo)
 
 	if isMergeChapters {
 		downloadMergeChapters(c,
@@ -163,6 +162,16 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	}
 }
 
+func printShortMangaInfo(i mangadexapi.MangaInfo) {
+	optionPrint.Print("Manga title: ")
+	dp.Println(i.Title("en"))
+	optionPrint.Print("Alt titles: ")
+	dp.Println(i.AltTitles())
+	optionPrint.Println("Read or Buy here:")
+	dp.Println(i.Links())
+	dp.Println("==============")
+}
+
 func downloadMergeChapters(client mangadexapi.Clientapi,
 	mangaInfo mangadexapi.MangaInfo,
 	chapters []mangadexapi.ChapterFullInfo,
@@ -171,7 +180,7 @@ func downloadMergeChapters(client mangadexapi.Clientapi,
 
 	containerFile, err := filekit.NewContainer(outputExtension)
 	if err != nil {
-		fmt.Printf("error while creating output file: %v\n", err)
+		e.Printf("While creating output file: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -180,7 +189,7 @@ func downloadMergeChapters(client mangadexapi.Clientapi,
 
 		err = downloadProcess(client, chapter, containerFile, isJpg)
 		if err != nil {
-			fmt.Printf("\nerror while downloading chapter: %v\n", err)
+			e.Printf("While downloading chapter: %v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -190,7 +199,7 @@ func downloadMergeChapters(client mangadexapi.Clientapi,
 	metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapters[0])
 	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, chaptersRange)
 	if err != nil {
-		fmt.Printf("error while saving %s on disk: %v\n", filename, err)
+		e.Printf("While saving %s on disk: %v\n", filename, err)
 		os.Exit(1)
 	}
 }
@@ -206,13 +215,13 @@ func downloadChapters(client mangadexapi.Clientapi,
 
 		containerFile, err := filekit.NewContainer(outputExtension)
 		if err != nil {
-			fmt.Printf("error while creating output file: %v\n", err)
+			e.Printf("While creating output file: %v\n", err)
 			os.Exit(1)
 		}
 
 		err = downloadProcess(client, chapter, containerFile, isJpg)
 		if err != nil {
-			fmt.Printf("error while downloading chapter: %v\n", err)
+			e.Printf("While downloading chapter: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -221,21 +230,22 @@ func downloadChapters(client mangadexapi.Clientapi,
 		metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapter)
 		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, "")
 		if err != nil {
-			fmt.Printf("error while saving %s on disk: %v\n", filename, err)
+			e.Printf("While saving %s on disk: %v\n", filename, err)
 			os.Exit(1)
 		}
 	}
 }
 
 func printChapterInfo(c mangadexapi.ChapterFullInfo) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-	fmt.Fprintf(w, "Chapter\t: %s\n", c.Number())
-	fmt.Fprintf(w, "Chapter title\t: %s\n", c.Title())
-	fmt.Fprintf(w, "Volume\t: %s\n", c.Volume())
-	fmt.Fprintf(w, "Language\t: %s\n", c.Language())
-	fmt.Fprintf(w, "Translated by\t: %s\n", c.Translator())
-	fmt.Fprintf(w, "Uploaded by\t: %s\n", c.UploadedBy())
-	w.Flush()
+	tableData := pterm.TableData{
+		{optionPrint.Sprint("Chapter"), dp.Sprint(c.Number())},
+		{optionPrint.Sprint("Chapter title"), dp.Sprint(c.Title())},
+		{optionPrint.Sprint("Volume"), dp.Sprint(c.Volume())},
+		{optionPrint.Sprint("Language"), dp.Sprint(c.Language())},
+		{optionPrint.Sprint("Translated by"), dp.Sprint(c.Translator())},
+		{optionPrint.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
+	}
+	pterm.DefaultTable.WithData(tableData).Render()
 }
 
 func downloadProcess(

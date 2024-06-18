@@ -73,7 +73,7 @@ func (mi MangaInfo) AltTitles() string {
 			altTitles = append(altTitles, fmt.Sprintf("%s (%s)", title, language))
 		}
 	}
-	return strings.Join(altTitles, " | ")
+	return strings.Join(altTitles, " , ")
 }
 
 func (mi MangaInfo) Authors() string {

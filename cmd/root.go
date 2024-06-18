@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -24,24 +24,31 @@ var (
 The program uses MangaDex API (https://api.mangadex.org/docs) to fetch manga content.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if versionApp {
-				fmt.Println(MDX_APP_VERSION)
+				dp.Printfln(MDX_APP_VERSION)
 				os.Exit(0)
 			}
 
 			if versionAPI {
-				fmt.Println(MANGADEX_API_VERSION)
+				dp.Println(MANGADEX_API_VERSION)
 				os.Exit(0)
 			}
 
 			cmd.Help()
 		},
 	}
+
+	// for error print
+	e = pterm.Error
+	// default print
+	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
+	// for option print
+	optionPrint = pterm.NewStyle(pterm.FgGreen, pterm.Bold)
 )
 
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-		fmt.Printf("%v", err)
+		e.Printf("While start execute root command: %v\n", err)
 		os.Exit(1)
 	}
 }
