@@ -78,6 +78,12 @@ mdx dl -t "Some Group" mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/s
 mdx dl -j mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 ```
 
+Check available updates:
+
+```shell
+mdx update
+```
+
 Get help about subcommands and flags:
 
 ```shell
