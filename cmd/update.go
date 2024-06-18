@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -37,12 +36,12 @@ func checkUpdate(cmd *cobra.Command, args []string) {
 		SetResult(&result).
 		Get("https://api.github.com/repos/arimatakao/mdx/releases/latest")
 	if err != nil {
-		fmt.Println("error while connecting to github api")
+		e.Printf("While connecting to github api: %v", err)
 		os.Exit(1)
 	}
 
 	if resp.IsError() {
-		fmt.Println("wrong response from github api")
+		e.Println("Wrong response body from github api")
 		os.Exit(1)
 	}
 
@@ -73,16 +72,17 @@ func checkUpdate(cmd *cobra.Command, args []string) {
 		isShouldUpdate = true
 	}
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-	fmt.Fprintf(w, "Your version\t: %s\n", MDX_APP_VERSION)
-	fmt.Fprintf(w, "Latest version\t: %s\n", result.TagName)
-	w.Flush()
+	tableData := pterm.TableData{
+		{optionPrint.Sprint("Your version"), dp.Sprint(MDX_APP_VERSION)},
+		{optionPrint.Sprint("Latest version"), dp.Sprint(result.TagName)},
+	}
+	pterm.DefaultTable.WithData(tableData).Render()
 	if isShouldUpdate {
-		fmt.Printf("Download new version here: %s\n",
-			"https://github.com/arimatakao/mdx/releases")
-		fmt.Printf("Release description:\n---\n%s\n---\n",
-			result.Description)
+		optionPrint.Print("Download new version here: ")
+		dp.Println("https://github.com/arimatakao/mdx/releases")
+		optionPrint.Println("Release description:")
+		dp.Println(result.Description)
 	} else {
-		fmt.Print("You have latest version.\n")
+		optionPrint.Print("You have latest version.\n")
 	}
 }

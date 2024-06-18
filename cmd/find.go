@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/arimatakao/mdx/mangadexapi"
@@ -40,7 +39,7 @@ func find(cmd *cobra.Command, args []string) {
 	response, err := c.Find(title, printedCount, 0, isDoujinshiAllow)
 	if err != nil {
 		spinner.Fail("Failed to search manga")
-		fmt.Printf("\nerror while search manga: %v\n", err)
+		e.Printf("error while search manga: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -50,15 +49,16 @@ func find(cmd *cobra.Command, args []string) {
 	}
 	spinner.Success("Manga found!")
 
-	fmt.Printf("\nTotal found: %d\n", response.Total)
-
 	for _, m := range response.List() {
-		fmt.Println("------------------------------")
+		dp.Println("------------------------------")
 		printMangaInfo(m)
 	}
 
 	if response.Total > printedCount {
-		fmt.Println("==============================")
-		fmt.Printf("\nFull results: https://mangadex.org/search?q=%s\n", title)
+		dp.Println("==============================")
+		optionPrint.Printf("Full results: ")
+		dp.Printfln(" https://mangadex.org/search?q=%s", title)
+		optionPrint.Print("Total found: ")
+		dp.Println(response.Total)
 	}
 }
