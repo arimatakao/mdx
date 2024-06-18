@@ -143,6 +143,7 @@ mdx ping
 
 ### Code
 
+- [ ] Use `pterm` output instead `fmt`
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `mangadexapi` package.
 - [ ] Refactor `cmd` package.
