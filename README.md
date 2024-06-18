@@ -17,8 +17,8 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 - Works on ***Windows, MacOS, Linux***.
 - Downloads ***multiple chapters***.
-- Saving manga in ***CBZ, PDF, EPUB formats***.
-- Saving multiple chapters in ***one file***.
+- Saves manga in ***CBZ, PDF, EPUB formats***.
+- Saves multiple chapters in ***one file***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Searches manga.
 - Displays information about manga.
@@ -26,11 +26,11 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Installation ⚙️
 
 1. Download `.tar.gz` archive from [releases page](https://github.com/arimatakao/mdx/releases).
-2. Unarchive the `.tar.gz` file you downloaded.
+2. Unarchive the `.tar.gz` file.
 
-Open unarchived folder and execute `mdx` file for use application.
+Open the unarchived folder and execute `mdx` file to use the application.
 
-Also, you can install the application with `go`:
+You can also install the application with `go`:
 
 ```
 go install github.com/arimatakao/mdx@latest
@@ -44,7 +44,7 @@ Download manga:
 # get help
 mdx download --help
 
-# by default 1 chapter is downloading
+# by default 1 chapter is being downloaded
 mdx download -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 # or
 mdx dl -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
@@ -53,22 +53,22 @@ mdx dl https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 # or
 mdx dl mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
-# download pdf format instead cbz
+# download pdf format instead of cbz
 mdx dl -e pdf mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
-# download specific chapter
+# download a specific chapter
 mdx dl -c 123 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
-# download range chapters
+# download range of chapters
 mdx dl -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
-# download range chapters and merge in one file
+# download a range of chapters and merge them in one file
 mdx dl -m -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
-# specify language, by default is english (for get available languages execute info subcommand)
+# specify language, default is english (to get the available languages, execute the info subcommand)
 mdx dl -l it mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
-# specify output directory
+# specify the output directory
 mdx dl -o your/dir mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 # specify translation
@@ -96,7 +96,7 @@ mdx search -t "Manga Title"
 mdx f -t "Manga Title"
 ```
 
-Get detail information about manga:
+Get detailed information about the manga:
 
 ```shell
 mdx info -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
@@ -119,12 +119,12 @@ mdx ping
 - [X] Add check update subcommand.
 - [ ] Add self update mechanism.
 - [ ] Add search filter for `find` subcommand.
-- [ ] Add flag `random` in `info` subcommand for get information about random manga.
+- [ ] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] Add flag to `download`:
     - [ ] `last` - download latest chapter.
-    - [ ] `this` - download specific chapter using link from user. Make download chapter get chapter link instead manga link.
-    - [ ] `volume` - download all chapter of specified volume.
-    - [ ] `volume-range` - download all chapter of specified volume range.
+    - [ ] `this` - download specific chapter using link from user. Make download chapter get the chapter link instead of the manga link.
+    - [ ] `volume` - download all chapters of specified volume.
+    - [ ] `volume-range` - download all chapters of specified volume range.
     - [ ] `oneshot` - download all oneshots of manga (if available).
     - [ ] `all` - download all chapters.
     - [X] `merge` - download chapter in one file.
