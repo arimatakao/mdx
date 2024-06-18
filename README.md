@@ -116,6 +116,7 @@ mdx ping
 
 - [X] Remove Doujinshi from list in `find` subcommand and add `doujinshi` flag for show Doujinshi in list.
 - [X] Add metadata for cbz downloaded archive.
+- [ ] Add check update subcommand.
 - [ ] Add search filter for `find` subcommand.
 - [ ] Add flag `random` in `info` subcommand for get information about random manga.
 - [ ] Add flag to `download`:
