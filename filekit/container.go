@@ -15,7 +15,7 @@ const (
 var ErrExtensionNotSupport = errors.New("extension container is not supported")
 
 type Container interface {
-	WriteOnDiskAndClose(outputDir string, outputFileName string, m metadata.Metadata) error
+	WriteOnDiskAndClose(outputDir string, outputFileName string, m metadata.Metadata, chapterRange string) error
 	AddFile(fileName string, imageBytes []byte) error
 }
 

@@ -38,7 +38,7 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 
 	downloadCmd.Flags().StringVarP(&outputExt,
-		"ext", "e", "cbz", "choose output file format: cbz pdf")
+		"ext", "e", "cbz", "choose output file format: cbz pdf epub")
 	downloadCmd.Flags().StringVarP(&mangaurl,
 		"url", "u", "", "specify the URL for the manga")
 	downloadCmd.Flags().StringVarP(&outputDir,
@@ -150,6 +150,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 
 	fmt.Println("Manga title: ", mangaInfo.Title("en"))
 	fmt.Println("Alternative title: ", mangaInfo.AltTitles())
+	fmt.Println("Read or Buy here:")
+	fmt.Println(mangaInfo.Links())
 	fmt.Println("====")
 
 	if isMergeChapters {
@@ -176,20 +178,17 @@ func downloadMergeChapters(client mangadexapi.Clientapi,
 	for _, chapter := range chapters {
 		printChapterInfo(chapter)
 
-		err = downloadProcess(client, mangaInfo, chapter, containerFile, isJpg)
+		err = downloadProcess(client, chapter, containerFile, isJpg)
 		if err != nil {
 			fmt.Printf("\nerror while downloading chapter: %v\n", err)
 			os.Exit(1)
 		}
 	}
 
-	firstChapter := chapters[0].Number()
-	lastChapter := chapters[len(chapters)-1].Number()
-
-	filename := fmt.Sprintf("[%s] %s ch%s-%s",
-		language, mangaInfo.Title("en"), firstChapter, lastChapter)
+	filename := fmt.Sprintf("[%s] %s ch%s",
+		language, mangaInfo.Title("en"), chaptersRange)
 	metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapters[0])
-	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo)
+	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, chaptersRange)
 	if err != nil {
 		fmt.Printf("error while saving %s on disk: %v\n", filename, err)
 		os.Exit(1)
@@ -211,7 +210,7 @@ func downloadChapters(client mangadexapi.Clientapi,
 			os.Exit(1)
 		}
 
-		err = downloadProcess(client, mangaInfo, chapter, containerFile, isJpg)
+		err = downloadProcess(client, chapter, containerFile, isJpg)
 		if err != nil {
 			fmt.Printf("error while downloading chapter: %v\n", err)
 			os.Exit(1)
@@ -220,7 +219,7 @@ func downloadChapters(client mangadexapi.Clientapi,
 		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
 			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
 		metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapter)
-		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo)
+		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, "")
 		if err != nil {
 			fmt.Printf("error while saving %s on disk: %v\n", filename, err)
 			os.Exit(1)
@@ -241,7 +240,6 @@ func printChapterInfo(c mangadexapi.ChapterFullInfo) {
 
 func downloadProcess(
 	client mangadexapi.Clientapi,
-	mangaInfo mangadexapi.MangaInfo,
 	chapter mangadexapi.ChapterFullInfo,
 	outputFile filekit.Container, isJpg bool) error {
 
@@ -262,12 +260,20 @@ func downloadProcess(
 			return err
 		}
 
-		insideFilename := fmt.Sprintf("%s_vol%s_ch%s_%d.%s",
-			strings.ReplaceAll(mangaInfo.Title("en"), " ", "_"),
+		pageIndex := i + 1
+
+		insideFilename := fmt.Sprintf("vol%s_ch%s_%d.%s",
 			chapter.Volume(),
 			strings.ReplaceAll(chapter.Number(), ".", "_"),
-			i+1,
+			pageIndex,
 			imgExt)
+		if pageIndex < 10 {
+			insideFilename = fmt.Sprintf("vol%s_ch%s_0%d.%s",
+				chapter.Volume(),
+				strings.ReplaceAll(chapter.Number(), ".", "_"),
+				pageIndex,
+				imgExt)
+		}
 		if err := outputFile.AddFile(insideFilename, outputImage); err != nil {
 			dlbar.UpdateTitle("Failed downloading").Stop()
 			return err

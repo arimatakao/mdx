@@ -71,8 +71,5 @@ func printMangaInfo(i mangadexapi.MangaInfo) {
 	fmt.Println("Description:")
 	fmt.Println(i.Description("en"))
 	fmt.Println("---")
-	fmt.Println("Read or Buy here:")
-	for _, v := range i.Links() {
-		fmt.Println(v)
-	}
+	fmt.Printf("Read or Buy here:\n%s\n", i.Links())
 }

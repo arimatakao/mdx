@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
 )
@@ -18,7 +19,7 @@ type cbzArchive struct {
 }
 
 // fileName without extension
-func newCBZArchive() (cbzArchive, error) {
+func newCBZArchive() (*cbzArchive, error) {
 	buf := new(bytes.Buffer)
 
 	zipWriter := zip.NewWriter(buf)
@@ -28,12 +29,12 @@ func newCBZArchive() (cbzArchive, error) {
 		writer: zipWriter,
 	}
 
-	return c, nil
+	return &c, nil
 }
 
 // ALWAYS close archive after all operations
-func (c cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
-	m metadata.Metadata) error {
+func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
+	m metadata.Metadata, chapterRange string) error {
 	// ComicBookInfo metadata
 	comment, err := json.Marshal(m.CBI)
 	if err != nil {
@@ -70,12 +71,15 @@ func (c cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 		return err
 	}
 
+	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
+
 	outputPath := filepath.Join(outputDir, outputFileName+".cbz")
 
 	return os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
 }
 
-func (c cbzArchive) AddFile(fileName string, src []byte) error {
+func (c *cbzArchive) AddFile(fileName string, src []byte) error {
 	buf := bytes.NewBuffer(src)
 	w, err := c.writer.Create(fileName)
 	if err != nil {

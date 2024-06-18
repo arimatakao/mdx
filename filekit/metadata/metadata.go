@@ -71,6 +71,8 @@ type MangaProvider interface {
 	Artists() string
 	TagsArr() []string
 	Tags() string
+	LinksArr() []string
+	Links() string
 }
 
 type ChapterProvider interface {
@@ -102,6 +104,11 @@ func NewMetadata(appId string, m MangaProvider, c ChapterProvider) Metadata {
 	mangaTitle := fmt.Sprintf("%s | %s vol%s ch%s",
 		c.Language(), m.Title("en"), c.Volume(), c.Number())
 
+	mangaDescription := m.Description("en") + "<br>Read or Buy here:<br>"
+	for _, l := range m.LinksArr() {
+		mangaDescription += l + "<br>"
+	}
+
 	metadata := Metadata{
 		CBI: ComicBookMetadata{
 			AppID:        appId,
@@ -130,8 +137,8 @@ func NewMetadata(appId string, m MangaProvider, c ChapterProvider) Metadata {
 			PageCount:   c.PagesCount(),
 			LanguageISO: c.Language(),
 			Format:      "Comic Book",
-			Manga:       "Yes",
-			Summary:     m.Description("en"),
+			Manga:       "No",
+			Summary:     mangaDescription,
 		},
 		P: PlainMetadata{
 			Authors: m.Authors(),

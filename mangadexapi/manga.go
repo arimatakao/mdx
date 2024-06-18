@@ -160,9 +160,35 @@ func (mi MangaInfo) TagsArr() []string {
 	return tags
 }
 
-func (mi MangaInfo) Links() []string {
+func (mi MangaInfo) Links() string {
+	joinedLinks := strings.Join(mi.LinksArr(), "\n")
+	return joinedLinks
+}
+
+func (mi MangaInfo) LinksArr() []string {
 	links := []string{}
-	for _, link := range mi.Attributes.Links {
+	for val, link := range mi.Attributes.Links {
+		switch val {
+		case "al":
+			links = append(links, "https://anilist.co/manga/"+link)
+			continue
+		case "ap":
+			links = append(links, "https://www.anime-planet.com/manga/"+link)
+			continue
+		case "bw":
+			links = append(links, "https://bookwalker.jp/"+link)
+			continue
+		case "nu":
+			links = append(links, "https://www.novelupdates.com/series/"+link)
+			continue
+		case "kt":
+			links = append(links, "https://kitsu.io/api/edge/manga/"+link)
+			continue
+		case "mal":
+			links = append(links, "https://myanimelist.net/manga/"+link)
+			continue
+		}
+
 		u, err := url.Parse(link)
 		if err == nil && u.Scheme == "https" {
 			links = append(links, link)

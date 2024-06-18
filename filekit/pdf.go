@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
@@ -29,7 +30,8 @@ func newPdfFile() (pdfFile, error) {
 	}, nil
 }
 
-func (p pdfFile) WriteOnDiskAndClose(outputDir, outputFileName string, m metadata.Metadata) error {
+func (p pdfFile) WriteOnDiskAndClose(outputDir, outputFileName string,
+	m metadata.Metadata, chapterRange string) error {
 	author := m.P.Authors + " | " + m.P.Artists
 
 	p.pdf.SetInfo(gopdf.PdfInfo{
@@ -45,6 +47,9 @@ func (p pdfFile) WriteOnDiskAndClose(outputDir, outputFileName string, m metadat
 	if err != nil {
 		return err
 	}
+
+	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
 
 	err = p.pdf.WritePdf(filepath.Join(outputDir, outputFileName+".pdf"))
 	if err != nil {

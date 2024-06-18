@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
 	"github.com/go-shiori/go-epub"
@@ -35,8 +36,8 @@ func newEpubArchive() (*epubArchive, error) {
 	}, nil
 }
 
-func (e epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName string,
-	m metadata.Metadata) error {
+func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName string,
+	m metadata.Metadata, chapterRange string) error {
 
 	for i, filePath := range e.filesPaths {
 		indexStr := fmt.Sprint(i + 1)
@@ -52,6 +53,9 @@ func (e epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName string
 	}
 
 	bookTitle := fmt.Sprintf("%s vol%s ch%s", m.CI.Title, m.CI.Volume, m.CI.Number)
+	if chapterRange != "" {
+		bookTitle = fmt.Sprintf("%s ch%s", m.CI.Title, chapterRange)
+	}
 	e.b.SetTitle(bookTitle)
 
 	authors := m.P.Authors + " | " + m.P.Artists
@@ -59,12 +63,17 @@ func (e epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName string
 
 	e.b.SetLang(m.CI.LanguageISO)
 
+	e.b.SetDescription(m.CI.Summary)
+
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	err = e.b.Write(filepath.Join(outputDir, outputFileName))
+	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
+
+	err = e.b.Write(filepath.Join(outputDir, outputFileName+".epub"))
 	if err != nil {
 		return err
 	}
