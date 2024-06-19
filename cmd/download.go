@@ -320,9 +320,7 @@ func downloadProcess(
 
 		pageIndex := i + 1
 
-		insideFilename := fmt.Sprintf("vol%s_ch%s_%d.%s",
-			chapter.Volume(),
-			strings.ReplaceAll(chapter.Number(), ".", "_"),
+		insideFilename := fmt.Sprintf("%d.%s",
 			pageIndex,
 			imgExt)
 		if pageIndex < 10 {

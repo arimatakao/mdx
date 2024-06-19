@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,8 +15,9 @@ import (
 )
 
 type cbzArchive struct {
-	buf    *bytes.Buffer
-	writer *zip.Writer
+	buf         *bytes.Buffer
+	writer      *zip.Writer
+	pageCounter int
 }
 
 // fileName without extension
@@ -25,8 +27,9 @@ func newCBZArchive() (*cbzArchive, error) {
 	zipWriter := zip.NewWriter(buf)
 
 	c := cbzArchive{
-		buf:    buf,
-		writer: zipWriter,
+		buf:         buf,
+		writer:      zipWriter,
+		pageCounter: 1,
 	}
 
 	return &c, nil
@@ -80,6 +83,7 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 }
 
 func (c *cbzArchive) AddFile(fileName string, src []byte) error {
+	fileName = fmt.Sprintf("%d_%s", c.pageCounter, fileName)
 	buf := bytes.NewBuffer(src)
 	w, err := c.writer.Create(fileName)
 	if err != nil {
@@ -88,5 +92,6 @@ func (c *cbzArchive) AddFile(fileName string, src []byte) error {
 	if _, err := io.Copy(w, buf); err != nil {
 		return err
 	}
+	c.pageCounter++
 	return nil
 }
