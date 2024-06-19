@@ -323,13 +323,6 @@ func downloadProcess(
 		insideFilename := fmt.Sprintf("%d.%s",
 			pageIndex,
 			imgExt)
-		if pageIndex < 10 {
-			insideFilename = fmt.Sprintf("vol%s_ch%s_0%d.%s",
-				chapter.Volume(),
-				strings.ReplaceAll(chapter.Number(), ".", "_"),
-				pageIndex,
-				imgExt)
-		}
 		if err := outputFile.AddFile(insideFilename, outputImage); err != nil {
 			dlbar.UpdateTitle("Failed downloading").Stop()
 			return err
