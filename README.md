@@ -148,6 +148,7 @@ mdx ping
 ### Code
 
 - [X] Use `pterm` output instead `fmt`.
+- [ ] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `mangadexapi` package.
 - [ ] Refactor `cmd` package.
