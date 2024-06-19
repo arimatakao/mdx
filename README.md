@@ -45,41 +45,41 @@ Download manga:
 mdx download --help
 
 # by default 1 chapter is being downloaded
-mdx download -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx download -u https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370/this-gorilla-will-die-in-1-day
 # or
-mdx dl -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -u https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370/this-gorilla-will-die-in-1-day
 # or
-mdx dl https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+mdx dl https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # or
-mdx dl mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+mdx dl mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download pdf format instead of cbz
-mdx dl -e pdf mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+mdx dl -e pdf mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download a specific chapter
-mdx dl -c 123 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -c 123 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # or set direct link to the chapter
-mdx dl --this mangadex.org/chapter/b5461c55-6bb7-4d53-9534-9caabf8c069f
+mdx dl --this mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
 # or
-mdx dl mangadex.org/chapter/b5461c55-6bb7-4d53-9534-9caabf8c069f
+mdx dl https://mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
 
 # download a range of chapters
-mdx dl -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+mdx dl -c 12-34 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download a range of chapters and merge them in one file
-mdx dl -m -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
+mdx dl -m -c 12-34 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # specify language, default is english (to get the available languages, execute the info subcommand)
-mdx dl -l it mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # specify the output directory
-mdx dl -o your/dir mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -o your/dir mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # specify translation
-mdx dl -t "Some Group" mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -t "Some Group" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download compressed version (lower image quality and file size)
-mdx dl -j mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+mdx dl -j mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 ```
 
 Check available updates:
