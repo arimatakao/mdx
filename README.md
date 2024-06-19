@@ -9,7 +9,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/arimatakao/mdx/total)
 ![GitHub Repo stars](https://img.shields.io/github/stars/arimatakao/mdx)
 
-![demo v1.4.0](./.github/assets/demo.gif)
+![demo](./.github/assets/demo.gif)
 
 </div>
 
@@ -58,6 +58,10 @@ mdx dl -e pdf mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
 
 # download a specific chapter
 mdx dl -c 123 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
+# or set direct link to the chapter
+mdx dl --this mangadex.org/chapter/b5461c55-6bb7-4d53-9534-9caabf8c069f
+# or
+mdx dl mangadex.org/chapter/b5461c55-6bb7-4d53-9534-9caabf8c069f
 
 # download a range of chapters
 mdx dl -c 12-34 mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84
@@ -128,7 +132,7 @@ mdx ping
 - [ ] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] Add flag to `download`:
     - [ ] `last` - download latest chapter.
-    - [ ] `this` - download specific chapter using link from user. Make download chapter get the chapter link instead of the manga link.
+    - [X] `this` - download a specific chapter using a link provided by the user.
     - [ ] `volume` - download all chapters of specified volume.
     - [ ] `volume-range` - download all chapters of specified volume range.
     - [ ] `oneshot` - download all oneshots of manga (if available).

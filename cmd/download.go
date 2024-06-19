@@ -36,16 +36,18 @@ var (
 func init() {
 	rootCmd.AddCommand(downloadCmd)
 
+	downloadCmd.Flags().StringVarP(&mangaUrl,
+		"url", "u", "", "specify the URL for the manga")
+	downloadCmd.Flags().StringVarP(&mangaChapterUrl,
+		"this", "s", "", "specify the direct URL to a specific chapter")
 	downloadCmd.Flags().StringVarP(&outputExt,
 		"ext", "e", "cbz", "choose output file format: cbz pdf epub")
-	downloadCmd.Flags().StringVarP(&mangaurl,
-		"url", "u", "", "specify the URL for the manga")
 	downloadCmd.Flags().StringVarP(&outputDir,
 		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
 	downloadCmd.Flags().StringVarP(&translateGroup,
-		"translated-by", "t", "", "specify part of name translation group")
+		"translated-by", "t", "", "specify a part of the translation group's name")
 	downloadCmd.Flags().StringVarP(&chaptersRange,
 		"chapter", "c", "1", "specify chapters")
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
@@ -59,20 +61,41 @@ func init() {
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && mangaurl == "" {
+	if len(args) == 0 && mangaUrl == "" && mangaChapterUrl == "" {
 		cmd.Help()
 		os.Exit(0)
 	}
 
-	if mangaurl == "" {
-		mangaId = mangadexapi.GetMangaIdFromArg(args)
+	if mangaUrl == "" {
+		mangaId = mangadexapi.GetMangaIdFromArgs(args)
 	} else {
-		mangaId = mangadexapi.GetMangaIdFromUrl(mangaurl)
+		mangaId = mangadexapi.GetMangaIdFromUrl(mangaUrl)
 	}
 
-	if mangaId == "" {
+	if mangaChapterUrl == "" {
+		mangaChapterId = mangadexapi.GetChapterIdFromArgs(args)
+	} else {
+		mangaChapterId = mangadexapi.GetChapterIdFromUrl(mangaChapterUrl)
+	}
+
+	if mangaId == "" && mangaChapterId == "" {
 		e.Println("Malformated URL")
 		os.Exit(0)
+	}
+
+	if isJpgFileFormat {
+		imgExt = "jpg"
+	}
+
+	if outputExt != filekit.CBZ_EXT &&
+		outputExt != filekit.PDF_EXT &&
+		outputExt != filekit.EPUB_EXT {
+		e.Printfln("%s format of file is not supported", outputExt)
+		os.Exit(0)
+	}
+
+	if mangaChapterId != "" {
+		return
 	}
 
 	singleChapter, err := strconv.Atoi(chaptersRange)
@@ -110,26 +133,21 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	if isJpgFileFormat {
-		imgExt = "jpg"
-	}
-
-	if outputExt != filekit.CBZ_EXT &&
-		outputExt != filekit.PDF_EXT &&
-		outputExt != filekit.EPUB_EXT {
-		e.Printf("%s format of file is not supported\n", outputExt)
-		os.Exit(0)
-	}
 }
 
 func downloadManga(cmd *cobra.Command, args []string) {
+	if mangaChapterId != "" {
+		downloadSingleChapter()
+		return
+	}
+
 	c := mangadexapi.NewClient(MDX_USER_AGENT)
 
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
 	resp, err := c.GetMangaInfo(mangaId)
 	if err != nil {
 		spinnerMangaInfo.Fail("Failed to get manga info")
-		e.Println("While getting manga info, maybe you get malformated link")
+		e.Println("While getting manga info, maybe you set malformated link")
 		os.Exit(1)
 	}
 	mangaInfo := resp.MangaInfo()
@@ -162,6 +180,36 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	}
 }
 
+func downloadSingleChapter() {
+	c := mangadexapi.NewClient(MDX_USER_AGENT)
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
+	resp, err := c.GetChapterInfo(mangaChapterId)
+	if err != nil {
+		spinnerChapInfo.Fail("Failed to get chapter info")
+		os.Exit(1)
+	}
+	chapterInfo := resp.GetChapterInfo()
+	chapterFullInfo, err := c.GetChapterImagesInFullInfo(chapterInfo)
+	if err != nil {
+		spinnerChapInfo.Fail("Failed to get chapter info")
+		os.Exit(1)
+	}
+	spinnerChapInfo.Success("Fetched chapter info")
+
+	mangaId := chapterInfo.GetMangaId()
+	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
+	respManga, err := c.GetMangaInfo(mangaId)
+	if err != nil {
+		spinnerMangaInfo.Fail("Failed to get manga info")
+		os.Exit(1)
+	}
+	mangaInfo := respManga.MangaInfo()
+	spinnerMangaInfo.Success("Fetched manga info")
+	chapArr := []mangadexapi.ChapterFullInfo{chapterFullInfo}
+	printShortMangaInfo(mangaInfo)
+	downloadChapters(c, mangaInfo, chapArr, outputExt, MDX_USER_AGENT, isJpgFileFormat)
+}
+
 func printShortMangaInfo(i mangadexapi.MangaInfo) {
 	optionPrint.Print("Manga title: ")
 	dp.Println(i.Title("en"))
@@ -170,6 +218,18 @@ func printShortMangaInfo(i mangadexapi.MangaInfo) {
 	optionPrint.Println("Read or Buy here:")
 	dp.Println(i.Links())
 	dp.Println("==============")
+}
+
+func printChapterInfo(c mangadexapi.ChapterFullInfo) {
+	tableData := pterm.TableData{
+		{optionPrint.Sprint("Chapter"), dp.Sprint(c.Number())},
+		{optionPrint.Sprint("Chapter title"), dp.Sprint(c.Title())},
+		{optionPrint.Sprint("Volume"), dp.Sprint(c.Volume())},
+		{optionPrint.Sprint("Language"), dp.Sprint(c.Language())},
+		{optionPrint.Sprint("Translated by"), dp.Sprint(c.Translator())},
+		{optionPrint.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
+	}
+	pterm.DefaultTable.WithData(tableData).Render()
 }
 
 func downloadMergeChapters(client mangadexapi.Clientapi,
@@ -234,18 +294,6 @@ func downloadChapters(client mangadexapi.Clientapi,
 			os.Exit(1)
 		}
 	}
-}
-
-func printChapterInfo(c mangadexapi.ChapterFullInfo) {
-	tableData := pterm.TableData{
-		{optionPrint.Sprint("Chapter"), dp.Sprint(c.Number())},
-		{optionPrint.Sprint("Chapter title"), dp.Sprint(c.Title())},
-		{optionPrint.Sprint("Volume"), dp.Sprint(c.Volume())},
-		{optionPrint.Sprint("Language"), dp.Sprint(c.Language())},
-		{optionPrint.Sprint("Translated by"), dp.Sprint(c.Translator())},
-		{optionPrint.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
-	}
-	pterm.DefaultTable.WithData(tableData).Render()
 }
 
 func downloadProcess(

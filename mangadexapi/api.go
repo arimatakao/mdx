@@ -19,6 +19,7 @@ const (
 	manga_path                 = "/manga"
 	specific_manga_path        = "/manga/{id}"
 	manga_feed_path            = "/manga/{id}/feed"
+	chapter_info_path          = "/chapter/{id}"
 	chapter_images_path        = "/at-home/server/{id}"
 	download_high_quility_path = "/data/{chapterHash}/{imageFilename}"
 	download_low_quility_path  = "/data-saver/{chapterHash}/{imageFilename}"
@@ -31,31 +32,57 @@ var (
 	ErrUnexpectedHeader = errors.New("unexpected response header value")
 )
 
-func GetMangaIdFromUrl(link string) string {
-
+func getMangaDexPaths(link string) []string {
 	if !strings.HasPrefix(link, "https://") && !strings.HasPrefix(link, "http://") {
 		link = "https://" + link
 	}
 
 	parsedUrl, err := url.Parse(link)
 	if err != nil {
-		return ""
+		return []string{}
 	}
 
 	if parsedUrl.Host != "mangadex.org" {
-		return ""
+		return []string{}
 	}
 
-	paths := strings.Split(parsedUrl.Path, "/")
+	return strings.Split(parsedUrl.Path, "/")
+}
+
+func GetMangaIdFromUrl(link string) string {
+	paths := getMangaDexPaths(link)
 	if len(paths) < 3 {
+		return ""
+	}
+	if paths[1] != "title" {
 		return ""
 	}
 	return paths[2]
 }
 
-func GetMangaIdFromArg(args []string) string {
+func GetMangaIdFromArgs(args []string) string {
 	for _, arg := range args {
 		if u := GetMangaIdFromUrl(arg); u != "" {
+			return u
+		}
+	}
+	return ""
+}
+
+func GetChapterIdFromUrl(link string) string {
+	paths := getMangaDexPaths(link)
+	if len(paths) < 3 {
+		return ""
+	}
+	if paths[1] != "chapter" {
+		return ""
+	}
+	return paths[2]
+}
+
+func GetChapterIdFromArgs(args []string) string {
+	for _, arg := range args {
+		if u := GetChapterIdFromUrl(arg); u != "" {
 			return u
 		}
 	}
@@ -159,6 +186,31 @@ func (a Clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
 	return info, nil
 }
 
+func (a Clientapi) GetChapterInfo(chapterId string) (ResponseChapter, error) {
+	if chapterId == "" {
+		return ResponseChapter{}, ErrBadInput
+	}
+
+	chapterInfo := ResponseChapter{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&chapterInfo).
+		SetPathParam("id", chapterId).
+		SetQueryString("includes[]=scanlation_group&includes[]=user").
+		Get(chapter_info_path)
+	if err != nil {
+		return ResponseChapter{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return ResponseChapter{}, &respErr
+	}
+
+	return chapterInfo, nil
+}
+
 func (a Clientapi) GetChaptersList(limit, offset int, mangaId, language string) (ResponseChapterList, error) {
 
 	if mangaId == "" {
@@ -249,6 +301,34 @@ func (a Clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 	}
 
 	return resp.Body(), nil
+}
+
+func (a Clientapi) GetChapterImagesInFullInfo(chap Chapter) (ChapterFullInfo, error) {
+	chapImages := ResponseChapterImages{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&chapImages).
+		SetPathParam("id", chap.ID).
+		Get(chapter_images_path)
+	if err != nil {
+		return ChapterFullInfo{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return ChapterFullInfo{}, &respErr
+	}
+
+	fullInfo := ChapterFullInfo{
+		info:            chap,
+		DownloadBaseURL: chapImages.BaseURL,
+		HashId:          chapImages.ChapterMetaInfo.Hash,
+		PngFiles:        chapImages.ChapterMetaInfo.Data,
+		JpgFiles:        chapImages.ChapterMetaInfo.DataSaver,
+	}
+
+	return fullInfo, nil
 }
 
 func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup string,

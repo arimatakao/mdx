@@ -9,8 +9,10 @@ import (
 
 var (
 	// general flags
-	mangaurl string
-	mangaId  string
+	mangaUrl        string
+	mangaId         string
+	mangaChapterUrl string
+	mangaChapterId  string
 )
 
 var (

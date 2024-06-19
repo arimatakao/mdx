@@ -69,6 +69,15 @@ func (c Chapter) getTranslator() string {
 	return ""
 }
 
+func (c Chapter) GetMangaId() string {
+	for _, rel := range c.Relationships {
+		if rel.Type == "manga" {
+			return rel.ID
+		}
+	}
+	return ""
+}
+
 type ResponseChapterList struct {
 	Result   string    `json:"result"`
 	Response string    `json:"response"`
@@ -76,6 +85,16 @@ type ResponseChapterList struct {
 	Limit    int       `json:"limit"`
 	Offset   int       `json:"offset"`
 	Total    int       `json:"total"`
+}
+
+type ResponseChapter struct {
+	Result   string  `json:"result"`
+	Response string  `json:"response"`
+	Data     Chapter `json:"data"`
+}
+
+func (r ResponseChapter) GetChapterInfo() Chapter {
+	return r.Data
 }
 
 func (l ResponseChapterList) GetChapters(lowest, highest int, transgp string) ([]Chapter, int) {
