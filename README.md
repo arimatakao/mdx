@@ -69,6 +69,9 @@ mdx dl -c 12-34 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # download a range of chapters and merge them in one file
 mdx dl -m -c 12-34 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
+# download last chapter
+mdx dl --last mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
 # specify language, default is english (to get the available languages, execute the info subcommand)
 mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
