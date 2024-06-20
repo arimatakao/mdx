@@ -411,3 +411,62 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 
 	return chaptersInfo, nil
 }
+
+func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
+	translationGroup string) (ChapterFullInfo, error) {
+	if mangaId == "" || language == "" {
+		return ChapterFullInfo{}, ErrBadInput
+	}
+
+	query := fmt.Sprintf(
+		"limit=%d&&translatedLanguage[]=%s"+
+			"&includes[]=scanlation_group&includes[]=user"+
+			"&order[volume]=desc&order[chapter]=desc",
+		1, language)
+
+	list := ResponseChapterList{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&list).
+		SetPathParam("id", mangaId).
+		SetQueryString(query).
+		Get(manga_feed_path)
+	if err != nil {
+		return ChapterFullInfo{}, ErrConnection
+	}
+	if resp.IsError() {
+		return ChapterFullInfo{}, &respErr
+	}
+
+	if len(list.Data) == 0 {
+		return ChapterFullInfo{}, nil
+	}
+
+	chapImages := ResponseChapterImages{}
+	respErr = ErrorResponse{}
+
+	respChap, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&chapImages).
+		SetPathParam("id", list.Data[0].ID).
+		Get(chapter_images_path)
+	if err != nil {
+		return ChapterFullInfo{}, ErrConnection
+	}
+
+	if respChap.IsError() {
+		return ChapterFullInfo{}, &respErr
+	}
+
+	fullInfo := ChapterFullInfo{
+		info:            list.Data[0],
+		DownloadBaseURL: chapImages.BaseURL,
+		HashId:          chapImages.ChapterMetaInfo.Hash,
+		PngFiles:        chapImages.ChapterMetaInfo.Data,
+		JpgFiles:        chapImages.ChapterMetaInfo.DataSaver,
+	}
+
+	return fullInfo, nil
+}

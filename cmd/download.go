@@ -31,6 +31,7 @@ var (
 	highestChapter  int
 	isMergeChapters bool
 	outputExt       string
+	isLastChapter   bool
 )
 
 func init() {
@@ -54,6 +55,8 @@ func init() {
 		"jpg", "j", false, "download compressed images for small output file size")
 	downloadCmd.Flags().BoolVarP(&isMergeChapters,
 		"merge", "m", false, "merge downloaded chapters into one file")
+	downloadCmd.Flags().BoolVarP(&isLastChapter,
+		"last", "", false, "download last chapter")
 
 	e = pterm.Error
 	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
@@ -70,6 +73,11 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		mangaId = mangadexapi.GetMangaIdFromArgs(args)
 	} else {
 		mangaId = mangadexapi.GetMangaIdFromUrl(mangaUrl)
+	}
+
+	if isLastChapter && mangaId == "" {
+		e.Println("Malformated URL")
+		os.Exit(0)
 	}
 
 	if mangaChapterUrl == "" {
@@ -94,7 +102,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	if mangaChapterId != "" {
+	if mangaChapterId != "" || isLastChapter {
 		return
 	}
 
@@ -135,6 +143,26 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 
 }
 
+func printShortMangaInfo(i mangadexapi.MangaInfo) {
+	dp.Println(field.Sprint("Manga title: "), i.Title("en"))
+	dp.Println(field.Sprint("Alt titles: "), i.AltTitles())
+	field.Println("Read or Buy here:")
+	dp.Println(i.Links())
+	dp.Println("==============")
+}
+
+func printChapterInfo(c mangadexapi.ChapterFullInfo) {
+	tableData := pterm.TableData{
+		{field.Sprint("Chapter"), dp.Sprint(c.Number())},
+		{field.Sprint("Chapter title"), dp.Sprint(c.Title())},
+		{field.Sprint("Volume"), dp.Sprint(c.Volume())},
+		{field.Sprint("Language"), dp.Sprint(c.Language())},
+		{field.Sprint("Translated by"), dp.Sprint(c.Translator())},
+		{field.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
+	}
+	pterm.DefaultTable.WithData(tableData).Render()
+}
+
 func downloadManga(cmd *cobra.Command, args []string) {
 	if mangaChapterId != "" {
 		downloadSingleChapter()
@@ -153,11 +181,17 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	mangaInfo := resp.MangaInfo()
 	spinnerMangaInfo.Success("Fetched manga info")
 
+	if isLastChapter {
+		downloadLastChapter(c, mangaInfo,
+			language, translateGroup, outputExt, MDX_USER_AGENT, isJpgFileFormat)
+		return
+	}
+
 	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
 	chapters, err := c.GetFullChaptersInfo(mangaId, language, translateGroup,
 		lowestChapter, highestChapter)
 	if err != nil {
-		spinnerChapInfo.Fail("Failed to get manga info")
+		spinnerChapInfo.Fail("Failed to get chapters info")
 		e.Printf("While getting manga chapters: %v\n", err)
 		os.Exit(1)
 	}
@@ -210,24 +244,23 @@ func downloadSingleChapter() {
 	downloadChapters(c, mangaInfo, chapArr, outputExt, MDX_USER_AGENT, isJpgFileFormat)
 }
 
-func printShortMangaInfo(i mangadexapi.MangaInfo) {
-	dp.Println(field.Sprint("Manga title: "), i.Title("en"))
-	dp.Println(field.Sprint("Alt titles: "), i.AltTitles())
-	field.Println("Read or Buy here:")
-	dp.Println(i.Links())
-	dp.Println("==============")
-}
+func downloadLastChapter(c mangadexapi.Clientapi,
+	i mangadexapi.MangaInfo, language, translationGroup, outputExt, userAgent string,
+	isJpg bool) {
 
-func printChapterInfo(c mangadexapi.ChapterFullInfo) {
-	tableData := pterm.TableData{
-		{field.Sprint("Chapter"), dp.Sprint(c.Number())},
-		{field.Sprint("Chapter title"), dp.Sprint(c.Title())},
-		{field.Sprint("Volume"), dp.Sprint(c.Volume())},
-		{field.Sprint("Language"), dp.Sprint(c.Language())},
-		{field.Sprint("Translated by"), dp.Sprint(c.Translator())},
-		{field.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
+	chapterFullInfo, err := c.GetLastChapterFullInfo(i.ID, language, translationGroup)
+	if err != nil {
+		spinnerChapInfo.Fail("Failed to get chapter info")
+		e.Printf("While getting manga chapters: %v\n", err)
+		os.Exit(1)
 	}
-	pterm.DefaultTable.WithData(tableData).Render()
+	spinnerChapInfo.Success("Fetched chapter info")
+
+	chapArr := []mangadexapi.ChapterFullInfo{chapterFullInfo}
+
+	printShortMangaInfo(i)
+	downloadChapters(c, i, chapArr, outputExt, userAgent, isJpg)
 }
 
 func downloadMergeChapters(client mangadexapi.Clientapi,
