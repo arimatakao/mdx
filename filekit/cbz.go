@@ -82,8 +82,8 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 	return os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
 }
 
-func (c *cbzArchive) AddFile(fileName string, src []byte) error {
-	fileName = fmt.Sprintf("%d_%s", c.pageCounter, fileName)
+func (c *cbzArchive) AddFile(fileExt string, src []byte) error {
+	fileName := fmt.Sprintf("%02d.%s", c.pageCounter, fileExt)
 	buf := bytes.NewBuffer(src)
 	w, err := c.writer.Create(fileName)
 	if err != nil {

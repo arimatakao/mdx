@@ -16,6 +16,7 @@ type epubArchive struct {
 	b          *epub.Epub
 	tempDir    string
 	filesPaths []string
+	pageIndex  int
 }
 
 func newEpubArchive() (*epubArchive, error) {
@@ -33,6 +34,7 @@ func newEpubArchive() (*epubArchive, error) {
 		b:          book,
 		tempDir:    dir,
 		filesPaths: []string{},
+		pageIndex:  1,
 	}, nil
 }
 
@@ -40,13 +42,13 @@ func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName strin
 	m metadata.Metadata, chapterRange string) error {
 
 	for i, filePath := range e.filesPaths {
-		indexStr := fmt.Sprint(i + 1)
-		imageEpubPath, err := e.b.AddImage(filePath, indexStr)
+		indexPage := fmt.Sprintf("%02d", i+1)
+		imageEpubPath, err := e.b.AddImage(filePath, indexPage)
 		if err != nil {
 			return err
 		}
-		sectionStr := fmt.Sprintf(imageSectionTemplate, imageEpubPath, indexStr)
-		_, err = e.b.AddSection(sectionStr, indexStr, "", "")
+		sectionStr := fmt.Sprintf(imageSectionTemplate, imageEpubPath, indexPage)
+		_, err = e.b.AddSection(sectionStr, indexPage, "", "")
 		if err != nil {
 			return err
 		}
@@ -81,7 +83,8 @@ func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName strin
 	return os.RemoveAll(e.tempDir)
 }
 
-func (e *epubArchive) AddFile(fileName string, imageBytes []byte) error {
+func (e *epubArchive) AddFile(fileExt string, imageBytes []byte) error {
+	fileName := fmt.Sprintf("%02d.%s", e.pageIndex, fileExt)
 	filePath := filepath.Join(e.tempDir, fileName)
 	err := os.WriteFile(filePath, imageBytes, os.ModePerm)
 	if err != nil {
@@ -90,5 +93,6 @@ func (e *epubArchive) AddFile(fileName string, imageBytes []byte) error {
 
 	e.filesPaths = append(e.filesPaths, filePath)
 
+	e.pageIndex++
 	return nil
 }

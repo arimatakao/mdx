@@ -16,7 +16,7 @@ var ErrExtensionNotSupport = errors.New("extension container is not supported")
 
 type Container interface {
 	WriteOnDiskAndClose(outputDir string, outputFileName string, m metadata.Metadata, chapterRange string) error
-	AddFile(fileName string, imageBytes []byte) error
+	AddFile(fileExt string, imageBytes []byte) error
 }
 
 func NewContainer(extension string) (Container, error) {

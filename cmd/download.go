@@ -310,7 +310,7 @@ func downloadProcess(
 		WithTitle("Downloading pages...").Start()
 	defer dlbar.Stop()
 
-	for i, imageFile := range files {
+	for _, imageFile := range files {
 		outputImage, err := client.DownloadImage(chapter.DownloadBaseURL,
 			chapter.HashId, imageFile, isJpgFileFormat)
 		if err != nil {
@@ -318,12 +318,7 @@ func downloadProcess(
 			return err
 		}
 
-		pageIndex := i + 1
-
-		insideFilename := fmt.Sprintf("%d.%s",
-			pageIndex,
-			imgExt)
-		if err := outputFile.AddFile(insideFilename, outputImage); err != nil {
+		if err := outputFile.AddFile(imgExt, outputImage); err != nil {
 			dlbar.UpdateTitle("Failed downloading").Stop()
 			return err
 		}
