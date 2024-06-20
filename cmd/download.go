@@ -311,7 +311,7 @@ func downloadProcess(
 
 	for _, imageFile := range files {
 		outputImage, err := client.DownloadImage(chapter.DownloadBaseURL,
-			chapter.HashId, imageFile, isJpgFileFormat)
+			chapter.HashId, imageFile, isJpg)
 		if err != nil {
 			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
 				UpdateTitle("Failed downloading").Stop()
