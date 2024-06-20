@@ -313,12 +313,14 @@ func downloadProcess(
 		outputImage, err := client.DownloadImage(chapter.DownloadBaseURL,
 			chapter.HashId, imageFile, isJpgFileFormat)
 		if err != nil {
-			dlbar.UpdateTitle("Failed downloading").Stop()
+			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
+				UpdateTitle("Failed downloading").Stop()
 			return err
 		}
 
 		if err := outputFile.AddFile(imgExt, outputImage); err != nil {
-			dlbar.UpdateTitle("Failed downloading").Stop()
+			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
+				UpdateTitle("Failed downloading").Stop()
 			return err
 		}
 		dlbar.Increment()
