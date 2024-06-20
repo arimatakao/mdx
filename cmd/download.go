@@ -305,7 +305,8 @@ func downloadProcess(
 	}
 
 	dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(files)).
-		WithTitle("Downloading pages...").Start()
+		WithTitle("Downloading pages...").
+		WithBarStyle(pterm.NewStyle(pterm.FgGreen)).Start()
 	defer dlbar.Stop()
 
 	for _, imageFile := range files {
