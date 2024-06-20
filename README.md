@@ -139,7 +139,7 @@ mdx ping
     - [ ] `all` - download all chapters.
     - [X] `merge` - download chapter in one file.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
-    - [X] `extension` - sets the extension of the outpud file. Add file support formats:
+    - [X] `extension` - sets the extension of the output file. Add file support formats:
         - [X] pdf (include metadata).
         - [X] epub (include metadata).
 - [ ] Add interactive mode for `find` subcommand.
