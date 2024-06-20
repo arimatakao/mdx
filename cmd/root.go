@@ -43,8 +43,8 @@ The program uses MangaDex API (https://api.mangadex.org/docs) to fetch manga con
 	e = pterm.Error
 	// default print
 	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
-	// for option print
-	optionPrint = pterm.NewStyle(pterm.FgGreen, pterm.Bold)
+	// for field print
+	field = pterm.NewStyle(pterm.FgGreen, pterm.BgDefault, pterm.Bold)
 )
 
 func Execute() {

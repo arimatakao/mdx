@@ -56,8 +56,8 @@ func init() {
 		"merge", "m", false, "merge downloaded chapters into one file")
 
 	e = pterm.Error
-	optionPrint = pterm.NewStyle(pterm.FgGreen, pterm.Bold)
 	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
+	field = pterm.NewStyle(pterm.FgGreen, pterm.BgDefault, pterm.Bold)
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
@@ -211,23 +211,21 @@ func downloadSingleChapter() {
 }
 
 func printShortMangaInfo(i mangadexapi.MangaInfo) {
-	optionPrint.Print("Manga title: ")
-	dp.Println(i.Title("en"))
-	optionPrint.Print("Alt titles: ")
-	dp.Println(i.AltTitles())
-	optionPrint.Println("Read or Buy here:")
+	dp.Println(field.Sprint("Manga title: "), i.Title("en"))
+	dp.Println(field.Sprint("Alt titles: "), i.AltTitles())
+	field.Println("Read or Buy here:")
 	dp.Println(i.Links())
 	dp.Println("==============")
 }
 
 func printChapterInfo(c mangadexapi.ChapterFullInfo) {
 	tableData := pterm.TableData{
-		{optionPrint.Sprint("Chapter"), dp.Sprint(c.Number())},
-		{optionPrint.Sprint("Chapter title"), dp.Sprint(c.Title())},
-		{optionPrint.Sprint("Volume"), dp.Sprint(c.Volume())},
-		{optionPrint.Sprint("Language"), dp.Sprint(c.Language())},
-		{optionPrint.Sprint("Translated by"), dp.Sprint(c.Translator())},
-		{optionPrint.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
+		{field.Sprint("Chapter"), dp.Sprint(c.Number())},
+		{field.Sprint("Chapter title"), dp.Sprint(c.Title())},
+		{field.Sprint("Volume"), dp.Sprint(c.Volume())},
+		{field.Sprint("Language"), dp.Sprint(c.Language())},
+		{field.Sprint("Translated by"), dp.Sprint(c.Translator())},
+		{field.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
 	}
 	pterm.DefaultTable.WithData(tableData).Render()
 }

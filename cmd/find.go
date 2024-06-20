@@ -56,9 +56,9 @@ func find(cmd *cobra.Command, args []string) {
 
 	if response.Total > printedCount {
 		dp.Println("==============================")
-		optionPrint.Printf("Full results: ")
+		field.Printf("Full results: ")
 		dp.Printfln(" https://mangadex.org/search?q=%s", title)
-		optionPrint.Print("Total found: ")
+		field.Print("Total found: ")
 		dp.Println(response.Total)
 	}
 }

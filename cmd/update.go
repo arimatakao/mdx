@@ -73,16 +73,16 @@ func checkUpdate(cmd *cobra.Command, args []string) {
 	}
 
 	tableData := pterm.TableData{
-		{optionPrint.Sprint("Your version"), dp.Sprint(MDX_APP_VERSION)},
-		{optionPrint.Sprint("Latest version"), dp.Sprint(result.TagName)},
+		{field.Sprint("Your version"), dp.Sprint(MDX_APP_VERSION)},
+		{field.Sprint("Latest version"), dp.Sprint(result.TagName)},
 	}
 	pterm.DefaultTable.WithData(tableData).Render()
 	if isShouldUpdate {
-		optionPrint.Print("Download new version here: ")
+		field.Print("Download new version here: ")
 		dp.Println("https://github.com/arimatakao/mdx/releases")
-		optionPrint.Println("Release description:")
+		field.Println("Release description:")
 		dp.Println(result.Description)
 	} else {
-		optionPrint.Print("You have latest version.\n")
+		field.Print("You have latest version.\n")
 	}
 }
