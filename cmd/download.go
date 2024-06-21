@@ -148,7 +148,7 @@ func printShortMangaInfo(i mangadexapi.MangaInfo) {
 	dp.Println(field.Sprint("Alt titles: "), i.AltTitles())
 	field.Println("Read or Buy here:")
 	dp.Println(i.Links())
-	dp.Println("==============")
+	dp.Println("==============\n")
 }
 
 func printChapterInfo(c mangadexapi.ChapterFullInfo) {
@@ -358,5 +358,6 @@ func downloadProcess(
 		}
 		dlbar.Increment()
 	}
+	dp.Println("")
 	return nil
 }
