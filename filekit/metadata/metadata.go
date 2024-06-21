@@ -24,8 +24,8 @@ type PlainMetadata struct {
 type ComicInfoMetadata struct {
 	XMLName     xml.Name `xml:"ComicInfo"`
 	Title       string   `xml:"Title"`
-	Number      string   `xml:"Number"`
-	Volume      string   `xml:"Volume"`
+	Number      string   `xml:"Number,omitempty"`
+	Volume      string   `xml:"Volume,omitempty"`
 	Year        int      `xml:"Year"`
 	Writer      string   `xml:"Writer"`
 	Penciller   string   `xml:"Penciller"`
