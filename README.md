@@ -123,6 +123,51 @@ Check connection to MangaDex API:
 mdx ping
 ```
 
+## FAQ 💬
+
+#### Where can I get the manga link?
+
+You can find the manga link at mangadex.org. Choose the manga you like and open its page. The link to the manga looks like this:
+
+```
+https://mangadex.org/title/abc-123-abc/some-title
+```
+
+You can use this link to download chapters of the manga.
+
+#### Where can I get the chapter link
+
+Go to mangadex.org, choose the manga you like, and open the specific chapter you want. The link to the chapter looks like this:
+
+```
+https://mangadex.org/chapter/abc-123-abc
+```
+
+You can use this link to download the specific chapter.
+
+#### I can't download chapter X of manga X. Why?
+
+Make sure you have specified the correct language, translation group, and number of chapters. If you are unable to download a specific chapter, try using the direct link to the chapter:
+
+```
+mdx dl https://mangadex.org/chapter/abc-123-abc
+```
+
+**Remember:** mdx can only download chapters from MangaDex.
+
+#### Why is downloading so slow?
+
+I don't know. It's a problem on MangaDex's side or on your side.
+
+#### I downloaded a chapter but the output filename doesn't have the volume number or chapter number. Why?
+
+This problem stems from the uploader failing to specify the correct volume or chapter details.
+
+#### Why do pages in the PDF have different sizes?
+
+The size of each page in the PDF corresponds to the size of the image.
+
+
 ## TODO 📌
 
 ### Functionality
@@ -134,7 +179,7 @@ mdx ping
 - [ ] Add search filter for `find` subcommand.
 - [ ] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] Add flag to `download`:
-    - [ ] `last` - download latest chapter.
+    - [X] `last` - download latest chapter.
     - [X] `this` - download a specific chapter using a link provided by the user.
     - [ ] `volume` - download all chapters of specified volume.
     - [ ] `volume-range` - download all chapters of specified volume range.
