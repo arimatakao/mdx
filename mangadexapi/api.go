@@ -222,7 +222,8 @@ func (a Clientapi) GetChaptersList(limit, offset int, mangaId, language string) 
 
 	query := fmt.Sprintf(
 		"limit=%d&offset=%d&translatedLanguage[]=%s"+
-			"&includes[]=scanlation_group&order[volume]=asc&order[chapter]=asc",
+			"&includes[]=scanlation_group&order[volume]=asc&order[chapter]=asc"+
+			"&includeEmptyPages=0",
 		limit, offset, language)
 
 	resp, err := a.c.R().
@@ -353,7 +354,8 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 		query := fmt.Sprintf(
 			"limit=%d&offset=%d&translatedLanguage[]=%s"+
 				"&includes[]=scanlation_group&includes[]=user"+
-				"&order[volume]=asc&order[chapter]=asc",
+				"&order[volume]=asc&order[chapter]=asc&"+
+				"&includeEmptyPages=0",
 			10, lowBound, language)
 
 		list := ResponseChapterList{}
@@ -421,7 +423,8 @@ func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
 	query := fmt.Sprintf(
 		"limit=%d&&translatedLanguage[]=%s"+
 			"&includes[]=scanlation_group&includes[]=user"+
-			"&order[volume]=desc&order[chapter]=desc",
+			"&order[volume]=desc&order[chapter]=desc"+
+			"&includeEmptyPages=0",
 		1, language)
 
 	list := ResponseChapterList{}
