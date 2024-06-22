@@ -135,7 +135,7 @@ https://mangadex.org/title/abc-123-abc/some-title
 
 You can use this link to download chapters of the manga.
 
-#### Where can I get the chapter link
+#### Where can I get the chapter link?
 
 Go to mangadex.org, choose the manga you like, and open the specific chapter you want. The link to the chapter looks like this:
 
@@ -175,31 +175,32 @@ The size of each page in the PDF corresponds to the size of the image.
 - [X] Remove Doujinshi from list in `find` subcommand and add `doujinshi` flag for show Doujinshi in list.
 - [X] Add metadata for cbz downloaded archive.
 - [X] Add check update subcommand.
-- [ ] Add self update mechanism.
-- [ ] Add search filter for `find` subcommand.
-- [ ] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] Add flag to `download`:
+    - [X] `merge` - download chapter in one file.
     - [X] `last` - download latest chapter.
     - [X] `this` - download a specific chapter using a link provided by the user.
-    - [ ] `volume` - download all chapters of specified volume.
-    - [ ] `volume-range` - download all chapters of specified volume range.
-    - [ ] `oneshot` - download all oneshots of manga (if available).
-    - [ ] `all` - download all chapters.
-    - [X] `merge` - download chapter in one file.
-    - [ ] `volume-bundle` - download all chapters of volume into one file.
     - [X] `extension` - sets the extension of the output file. Add file support formats:
         - [X] pdf (include metadata).
         - [X] epub (include metadata).
+    - [ ] `volume` - download all chapters of specified volume.
+    - [ ] `volume-range` - download all chapters of specified volume range.
+    - [ ] `volume-bundle` - download all chapters of volume into one file.
+    - [ ] `all` - download all chapters.
+    - [ ] `oneshot` - download all oneshots of manga (if available).
+- [ ] Add self update mechanism.
+- [ ] Add search filter for `find` subcommand.
+- [ ] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] Add interactive mode for `find` subcommand.
 - [ ] Add interactive mode for `download` subcommand.
 
 ### Code
 
 - [X] Use `pterm` output instead `fmt`.
+- [X] Refactor `cmd` package.
 - [ ] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
 - [ ] Add tests for `mangadexapi` package.
+- [ ] Refactor `internal/mdx` package.
 - [ ] Refactor `mangadexapi` package.
-- [ ] Refactor `cmd` package.
 - [ ] Refactor `filekit` package.
 
 ## License 📜
