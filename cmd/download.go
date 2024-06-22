@@ -1,27 +1,24 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/arimatakao/mdx/filekit"
-	"github.com/arimatakao/mdx/filekit/metadata"
+	"github.com/arimatakao/mdx/internal/mdx"
 	"github.com/arimatakao/mdx/mangadexapi"
-	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
 var (
 	downloadCmd = &cobra.Command{
 		Use:     "download",
-		Aliases: []string{"dl", "save"},
+		Aliases: []string{"dl", "save", "sv"},
 		Short:   "Download manga by URL",
 		PreRun:  checkDownloadArgs,
 		Run:     downloadManga,
 	}
-	imgExt          string = "png"
 	isJpgFileFormat bool
 	outputDir       string
 	language        string
@@ -57,10 +54,6 @@ func init() {
 		"merge", "m", false, "merge downloaded chapters into one file")
 	downloadCmd.Flags().BoolVarP(&isLastChapter,
 		"last", "", false, "download last chapter")
-
-	e = pterm.Error
-	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
-	field = pterm.NewStyle(pterm.FgGreen, pterm.BgDefault, pterm.Bold)
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
@@ -89,10 +82,6 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	if mangaId == "" && mangaChapterId == "" {
 		e.Println("Malformated URL")
 		os.Exit(0)
-	}
-
-	if isJpgFileFormat {
-		imgExt = "jpg"
 	}
 
 	if outputExt != filekit.CBZ_EXT &&
@@ -143,221 +132,14 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 
 }
 
-func printShortMangaInfo(i mangadexapi.MangaInfo) {
-	dp.Println(field.Sprint("Manga title: "), i.Title("en"))
-	dp.Println(field.Sprint("Alt titles: "), i.AltTitles())
-	field.Println("Read or Buy here:")
-	dp.Println(i.Links())
-	dp.Println("==============\n")
-}
-
-func printChapterInfo(c mangadexapi.ChapterFullInfo) {
-	tableData := pterm.TableData{
-		{field.Sprint("Chapter"), dp.Sprint(c.Number())},
-		{field.Sprint("Chapter title"), dp.Sprint(c.Title())},
-		{field.Sprint("Volume"), dp.Sprint(c.Volume())},
-		{field.Sprint("Language"), dp.Sprint(c.Language())},
-		{field.Sprint("Translated by"), dp.Sprint(c.Translator())},
-		{field.Sprint("Uploaded by"), dp.Sprint(c.UploadedBy())},
-	}
-	pterm.DefaultTable.WithData(tableData).Render()
-}
-
 func downloadManga(cmd *cobra.Command, args []string) {
+	params := mdx.NewDownloadParam(chaptersRange, lowestChapter, highestChapter, language,
+		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters)
 	if mangaChapterId != "" {
-		downloadSingleChapter()
-		return
-	}
-
-	c := mangadexapi.NewClient(MDX_USER_AGENT)
-
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	resp, err := c.GetMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		e.Println("While getting manga info, maybe you set malformated link")
-		os.Exit(1)
-	}
-	mangaInfo := resp.MangaInfo()
-	spinnerMangaInfo.Success("Fetched manga info")
-
-	if isLastChapter {
-		downloadLastChapter(c, mangaInfo,
-			language, translateGroup, outputExt, MDX_USER_AGENT, isJpgFileFormat)
-		return
-	}
-
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
-	chapters, err := c.GetFullChaptersInfo(mangaId, language, translateGroup,
-		lowestChapter, highestChapter)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapters info")
-		e.Printf("While getting manga chapters: %v\n", err)
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapters info")
-
-	if len(chapters) == 0 {
-		e.Printf("Chapters %s not found, try another "+
-			"range, language, translation group etc.\n", chaptersRange)
-		os.Exit(0)
-	}
-
-	printShortMangaInfo(mangaInfo)
-
-	if isMergeChapters {
-		downloadMergeChapters(c,
-			mangaInfo, chapters, outputExt, MDX_USER_AGENT, isJpgFileFormat)
+		params.DownloadSpecificChapter(mangaChapterId)
+	} else if isLastChapter {
+		params.DownloadLastChapter(mangaId)
 	} else {
-		downloadChapters(c,
-			mangaInfo, chapters, outputExt, MDX_USER_AGENT, isJpgFileFormat)
+		params.DownloadChapters(mangaId)
 	}
-}
-
-func downloadSingleChapter() {
-	c := mangadexapi.NewClient(MDX_USER_AGENT)
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
-	resp, err := c.GetChapterInfo(mangaChapterId)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapter info")
-		os.Exit(1)
-	}
-	chapterInfo := resp.GetChapterInfo()
-	chapterFullInfo, err := c.GetChapterImagesInFullInfo(chapterInfo)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapter info")
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapter info")
-
-	mangaId := chapterInfo.GetMangaId()
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	respManga, err := c.GetMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		os.Exit(1)
-	}
-	mangaInfo := respManga.MangaInfo()
-	spinnerMangaInfo.Success("Fetched manga info")
-	chapArr := []mangadexapi.ChapterFullInfo{chapterFullInfo}
-	printShortMangaInfo(mangaInfo)
-	downloadChapters(c, mangaInfo, chapArr, outputExt, MDX_USER_AGENT, isJpgFileFormat)
-}
-
-func downloadLastChapter(c mangadexapi.Clientapi,
-	i mangadexapi.MangaInfo, language, translationGroup, outputExt, userAgent string,
-	isJpg bool) {
-
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
-	chapterFullInfo, err := c.GetLastChapterFullInfo(i.ID, language, translationGroup)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapter info")
-		e.Printf("While getting manga chapters: %v\n", err)
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapter info")
-
-	chapArr := []mangadexapi.ChapterFullInfo{chapterFullInfo}
-
-	printShortMangaInfo(i)
-	downloadChapters(c, i, chapArr, outputExt, userAgent, isJpg)
-}
-
-func downloadMergeChapters(client mangadexapi.Clientapi,
-	mangaInfo mangadexapi.MangaInfo,
-	chapters []mangadexapi.ChapterFullInfo,
-	outputExtension, userAgent string,
-	isJpg bool) {
-
-	containerFile, err := filekit.NewContainer(outputExtension)
-	if err != nil {
-		e.Printf("While creating output file: %v\n", err)
-		os.Exit(1)
-	}
-
-	for _, chapter := range chapters {
-		printChapterInfo(chapter)
-
-		err = downloadProcess(client, chapter, containerFile, isJpg)
-		if err != nil {
-			e.Printf("While downloading chapter: %v\n", err)
-			os.Exit(1)
-		}
-	}
-
-	filename := fmt.Sprintf("[%s] %s ch%s",
-		language, mangaInfo.Title("en"), chaptersRange)
-	metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapters[0])
-	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, chaptersRange)
-	if err != nil {
-		e.Printf("While saving %s on disk: %v\n", filename, err)
-		os.Exit(1)
-	}
-}
-
-func downloadChapters(client mangadexapi.Clientapi,
-	mangaInfo mangadexapi.MangaInfo,
-	chapters []mangadexapi.ChapterFullInfo,
-	outputExtension, userAgent string,
-	isJpg bool) {
-
-	for _, chapter := range chapters {
-		printChapterInfo(chapter)
-
-		containerFile, err := filekit.NewContainer(outputExtension)
-		if err != nil {
-			e.Printf("While creating output file: %v\n", err)
-			os.Exit(1)
-		}
-
-		err = downloadProcess(client, chapter, containerFile, isJpg)
-		if err != nil {
-			e.Printf("While downloading chapter: %v\n", err)
-			os.Exit(1)
-		}
-
-		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
-			language, mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
-		metaInfo := metadata.NewMetadata(userAgent, mangaInfo, chapter)
-		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, "")
-		if err != nil {
-			e.Printf("While saving %s on disk: %v\n", filename, err)
-			os.Exit(1)
-		}
-	}
-}
-
-func downloadProcess(
-	client mangadexapi.Clientapi,
-	chapter mangadexapi.ChapterFullInfo,
-	outputFile filekit.Container, isJpg bool) error {
-
-	files := chapter.PngFiles
-	if isJpg {
-		files = chapter.JpgFiles
-	}
-
-	dlbar, _ := pterm.DefaultProgressbar.WithTotal(len(files)).
-		WithTitle("Downloading pages...").
-		WithBarStyle(pterm.NewStyle(pterm.FgGreen)).Start()
-	defer dlbar.Stop()
-
-	for _, imageFile := range files {
-		outputImage, err := client.DownloadImage(chapter.DownloadBaseURL,
-			chapter.HashId, imageFile, isJpg)
-		if err != nil {
-			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
-				UpdateTitle("Failed downloading").Stop()
-			return err
-		}
-
-		if err := outputFile.AddFile(imgExt, outputImage); err != nil {
-			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
-				UpdateTitle("Failed downloading").Stop()
-			return err
-		}
-		dlbar.Increment()
-	}
-	dp.Println("")
-	return nil
 }

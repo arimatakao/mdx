@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"os"
-
-	"github.com/arimatakao/mdx/mangadexapi"
-	"github.com/pterm/pterm"
+	"github.com/arimatakao/mdx/internal/mdx"
 	"github.com/spf13/cobra"
 )
 
 var (
 	findCmd = &cobra.Command{
 		Use:     "find",
-		Aliases: []string{"f", "search", "list"},
+		Aliases: []string{"f", "search", "list", "ls"},
 		Short:   "Find manga",
 		Long:    "Search and print manga info. Sort by revelance asceding. Best results will be down",
 		Run:     find,
@@ -32,33 +29,5 @@ func init() {
 }
 
 func find(cmd *cobra.Command, args []string) {
-	c := mangadexapi.NewClient(MDX_USER_AGENT)
-
-	spinner, _ := pterm.DefaultSpinner.Start("Searching manga...")
-	printedCount := 25
-	response, err := c.Find(title, printedCount, 0, isDoujinshiAllow)
-	if err != nil {
-		spinner.Fail("Failed to search manga")
-		e.Printf("error while search manga: %v\n", err)
-		os.Exit(1)
-	}
-
-	if response.Total == 0 {
-		spinner.Warning("Nothing found...")
-		os.Exit(0)
-	}
-	spinner.Success("Manga found!")
-
-	for _, m := range response.List() {
-		dp.Println("------------------------------")
-		printMangaInfo(m)
-	}
-
-	if response.Total > printedCount {
-		dp.Println("==============================")
-		field.Printf("Full results: ")
-		dp.Printfln(" https://mangadex.org/search?q=%s", title)
-		field.Print("Total found: ")
-		dp.Println(response.Total)
-	}
+	mdx.NewFindParams(title, isDoujinshiAllow).Find()
 }

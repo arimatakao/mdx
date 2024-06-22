@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/arimatakao/mdx/app"
+	"github.com/arimatakao/mdx/internal/mdx"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -21,18 +23,15 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:   "mdx",
-		Short: "manga downloader from MangaDex website",
-		Long: `mdx is a command-line interface program for downloading manga from the MangaDex - https://mangadex.org .
-The program uses MangaDex API (https://api.mangadex.org/docs) to fetch manga content.`,
+		Short: app.SHORT_DESCRIPTION,
+		Long:  app.LONG_DESCRIPTION,
 		Run: func(cmd *cobra.Command, args []string) {
 			if versionApp {
-				dp.Printfln(MDX_APP_VERSION)
-				os.Exit(0)
+				mdx.PrintVersion()
 			}
 
 			if versionAPI {
-				dp.Println(MANGADEX_API_VERSION)
-				os.Exit(0)
+				mdx.PrintMangaDexAPIVersion()
 			}
 
 			cmd.Help()
@@ -41,10 +40,6 @@ The program uses MangaDex API (https://api.mangadex.org/docs) to fetch manga con
 
 	// for error print
 	e = pterm.Error
-	// default print
-	dp = pterm.NewStyle(pterm.FgDefault, pterm.BgDefault)
-	// for field print
-	field = pterm.NewStyle(pterm.FgGreen, pterm.BgDefault, pterm.Bold)
 )
 
 func Execute() {

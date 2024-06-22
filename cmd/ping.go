@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/arimatakao/mdx/mangadexapi"
+	"github.com/arimatakao/mdx/internal/mdx"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +17,5 @@ func init() {
 }
 
 func ping(cmd *cobra.Command, args []string) {
-	c := mangadexapi.NewClient(MDX_USER_AGENT)
-	isAlive := c.Ping()
-
-	if isAlive {
-		dp.Println("MangaDex API is alive")
-	} else {
-		dp.Println("MangaDex API is NOT alive")
-	}
+	mdx.Ping()
 }
