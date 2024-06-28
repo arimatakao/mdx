@@ -19,11 +19,9 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: '1.22.4'
-
     - name: Build Go application
       run: |
         go build -o ./bin/mdx main.go
-
     - name: Create deb package structure
       env:
         VERSION: ${{ github.event.release.tag_name }}
@@ -38,14 +36,11 @@ jobs:
         mkdir -p ./debian/mdx/usr/bin
         cp ./bin/mdx ./debian/mdx/usr/bin/mdx
         chmod +x ./debian/mdx/usr/bin/mdx
-
     - name: Build deb package
       run: dpkg-deb --build ./debian/mdx
-
     - name: Set deb package name with version and architecture
       run: |
         mv ./debian/mdx.deb "./${PACKAGE_NAME}"
-
     - name: Upload deb package to release
       uses: actions/upload-release-asset@v1
       env:
