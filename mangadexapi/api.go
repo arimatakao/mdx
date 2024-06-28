@@ -32,23 +32,23 @@ var (
 	ErrUnexpectedHeader = errors.New("unexpected response header value")
 )
 
+// getMangaDexPaths returns the path segments of a given link.
+// It returns an empty slice if the link is invalid.
 func getMangaDexPaths(link string) []string {
 	if !strings.HasPrefix(link, "https://") && !strings.HasPrefix(link, "http://") {
 		link = "https://" + link
 	}
 
 	parsedUrl, err := url.Parse(link)
-	if err != nil {
-		return []string{}
-	}
-
-	if parsedUrl.Host != "mangadex.org" {
-		return []string{}
+	if err != nil || parsedUrl.Host != "mangadex.org" {
+		return nil
 	}
 
 	return strings.Split(parsedUrl.Path, "/")
 }
 
+// GetMangaIdFromUrl extracts the manga ID from a MangaDex link.
+// It returns an empty string if the link is invalid.
 func GetMangaIdFromUrl(link string) string {
 	paths := getMangaDexPaths(link)
 	if len(paths) < 3 {
@@ -60,6 +60,9 @@ func GetMangaIdFromUrl(link string) string {
 	return paths[2]
 }
 
+// GetMangaIdFromArgs extracts the manga ID from a list of arguments.
+// It takes in a slice of strings representing the arguments and returns a string representing the manga ID.
+// If no valid manga ID is found in the arguments, it returns an empty string.
 func GetMangaIdFromArgs(args []string) string {
 	for _, arg := range args {
 		if u := GetMangaIdFromUrl(arg); u != "" {
@@ -69,6 +72,8 @@ func GetMangaIdFromArgs(args []string) string {
 	return ""
 }
 
+// GetChapterIdFromUrl extracts the chapter ID from a MangaDex link.
+// It takes a string link as input and returns a string representing the chapter ID.
 func GetChapterIdFromUrl(link string) string {
 	paths := getMangaDexPaths(link)
 	if len(paths) < 3 {
@@ -80,6 +85,9 @@ func GetChapterIdFromUrl(link string) string {
 	return paths[2]
 }
 
+// GetChapterIdFromArgs extracts the chapter ID from a list of arguments.
+// It takes in a slice of strings representing the arguments and returns a string representing the chapter ID.
+// If no valid chapter ID is found in the arguments, it returns an empty string.
 func GetChapterIdFromArgs(args []string) string {
 	for _, arg := range args {
 		if u := GetChapterIdFromUrl(arg); u != "" {
@@ -99,6 +107,9 @@ func (l silentLogger) Errorf(format string, v ...interface{}) {}
 func (l silentLogger) Warnf(format string, v ...interface{})  {}
 func (l silentLogger) Debugf(format string, v ...interface{}) {}
 
+// NewClient creates a new client for interacting with the MangeDex API.
+// userAgent: the User-Agent string to be used in the HTTP header.
+// Returns a Clientapi struct with the configured Resty client.
 func NewClient(userAgent string) Clientapi {
 	if userAgent == "" {
 		userAgent = default_useragent
@@ -116,19 +127,22 @@ func NewClient(userAgent string) Clientapi {
 	}
 }
 
+// Ping checks the health of the API by sending a GET request to the health_path endpoint.
+// It returns a boolean value based on the status code and error response.
 func (a Clientapi) Ping() bool {
 	resp, err := a.c.R().Get(health_path)
-	if err != nil {
-		return false
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return false
-	}
-
-	return true
+	return resp.StatusCode() == http.StatusOK && err == nil
 }
 
+// Find retrieves a list of manga based on the provided title, limit, offset, and isDoujinshiAllow flag.
+// Parameters:
+// - title: the title of the manga to search for
+// - limit: the maximum number of manga to retrieve (max 96)
+// - offset: the number of manga to skip before retrieving (int)
+// - isDoujinshiAllow: a flag indicating whether doujinshi should be included in the search results (bool)
+// Returns:
+// - mangaList: a list of manga matching the search criteria (ResponseMangaList)
+// - error: an error if the request fails or the response is not as expected (error)
 func (a Clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) (ResponseMangaList, error) {
 	if title == "" || limit == 0 || offset < 0 {
 		return ResponseMangaList{}, ErrBadInput
@@ -161,6 +175,7 @@ func (a Clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) 
 	return mangaList, nil
 }
 
+// GetMangaInfo retrieves the information of a manga with the given mangaId.
 func (a Clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
 	if mangaId == "" {
 		return MangaInfoResponse{}, ErrBadInput
@@ -186,6 +201,7 @@ func (a Clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
 	return info, nil
 }
 
+// GetChapterInfo retrieves the information of a chapter with the given chapterId.
 func (a Clientapi) GetChapterInfo(chapterId string) (ResponseChapter, error) {
 	if chapterId == "" {
 		return ResponseChapter{}, ErrBadInput
@@ -211,6 +227,15 @@ func (a Clientapi) GetChapterInfo(chapterId string) (ResponseChapter, error) {
 	return chapterInfo, nil
 }
 
+// GetChaptersList retrieves a list of chapters for a given manga, limit, offset, and language.
+// Parameters:
+// - limit: the maximum number of chapters to retrieve
+// - offset: the number of chapters to skip before retrieving
+// - mangaId: the ID of the manga
+// - language: the language of the chapters
+// Returns:
+// - ResponseChapterList: a list of chapters (ResponseChapterList)
+// - error: an error if the request fails or the response is not as expected (error)
 func (a Clientapi) GetChaptersList(limit, offset int, mangaId, language string) (ResponseChapterList, error) {
 
 	if mangaId == "" {
@@ -243,6 +268,12 @@ func (a Clientapi) GetChaptersList(limit, offset int, mangaId, language string) 
 	return list, nil
 }
 
+// GetChapterImageList retrieves a list of images for a given chapter.
+// Parameters:
+// - chapterId: the ID of the chapter
+// Returns:
+// - ResponseChapterImages: a list of images
+// - error: an error if the request fails or the response is not as expected
 func (a Clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages, error) {
 	if chapterId == "" {
 		return ResponseChapterImages{}, ErrBadInput
@@ -267,6 +298,15 @@ func (a Clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages,
 	return list, nil
 }
 
+// DownloadImage downloads an image from the specified base URL, chapter hash, and image filename.
+// Parameters:
+// - baseUrl: the base URL of the image.
+// - chapterHash: the hash of the chapter.
+// - imageFilename: the filename of the image.
+// - isJpg: a boolean indicating whether the image is in JPG format.
+// Returns:
+// - []byte: the downloaded image as a byte slice.
+// - error: an error if the download fails.
 func (a Clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 	isJpg bool) ([]byte, error) {
 	if baseUrl == "" || chapterHash == "" || imageFilename == "" {
@@ -304,6 +344,12 @@ func (a Clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 	return resp.Body(), nil
 }
 
+// GetChapterImagesInFullInfo retrieves the full information of a chapter and chapter images.
+// Parameters:
+// - chap: The chapter for which to retrieve the images.
+// Returns:
+// - ChapterFullInfo: The full information of the chapter's images.
+// - error: An error if the request fails or the response is an error.
 func (a Clientapi) GetChapterImagesInFullInfo(chap Chapter) (ChapterFullInfo, error) {
 	chapImages := ResponseChapterImages{}
 	respErr := ErrorResponse{}
@@ -332,6 +378,16 @@ func (a Clientapi) GetChapterImagesInFullInfo(chap Chapter) (ChapterFullInfo, er
 	return fullInfo, nil
 }
 
+// GetFullChaptersInfo retrieves the full information of all chapters within a given range for a specific manga.
+// Parameters:
+// - mangaId: the ID of the manga.
+// - language: the language of the chapters.
+// - translationGroup: the translation group of the chapters.
+// - lowestChapter: the lowest chapter number.
+// - highestChapter: the highest chapter number.
+// Returns:
+// - []ChapterFullInfo: a slice of ChapterFullInfo structs containing the full information of the chapters.
+// - error: an error if there was a problem retrieving the information.
 func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup string,
 	lowestChapter, highestChapter int) ([]ChapterFullInfo, error) {
 
@@ -414,6 +470,14 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 	return chaptersInfo, nil
 }
 
+// GetLastChapterFullInfo retrieves the full information of the last chapter of a manga.
+// Parameters:
+// - mangaId: the ID of the manga.
+// - language: the language of the chapters.
+// - translationGroup: the translation group of the chapters.
+// Returns:
+// - ChapterFullInfo: the full information of the last chapter.
+// - error: an error if there was a problem retrieving the information.
 func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
 	translationGroup string) (ChapterFullInfo, error) {
 	if mangaId == "" || language == "" {
