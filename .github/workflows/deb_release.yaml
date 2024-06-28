@@ -1,0 +1,58 @@
+name: Release deb package
+
+on:
+  release:
+    types: [created]
+
+permissions:
+    contents: write
+    packages: write
+
+jobs:
+  linux-release:
+    name: Release Go Binaries for Linux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.22.4'
+
+    - name: Build Go application
+      run: |
+        go build -o ./bin/mdx main.go
+
+    - name: Create deb package structure
+      env:
+        VERSION: ${{ github.event.release.tag_name }}
+        PACKAGE_NAME: "mdx_${{ github.event.release.tag_name }}_amd64.deb"
+      run: |
+        echo "Package: mdx" >> ./control
+        echo "Version: ${VERSION}" >> ./control
+        echo "Architecture: amd64" >> ./control
+        echo "Maintainer: arimatakao" >> ./control
+        echo "Description: cli manga downloader saves in CBZ PDF EPUB formats" >> ./control
+        echo "Homepage: https://github.com/arimatakao/mdx" >> ./control
+        mkdir -p ./debian/mdx/usr/bin
+        cp ./bin/mdx ./debian/mdx/usr/bin/mdx
+        chmod +x ./debian/mdx/usr/bin/mdx
+
+    - name: Build deb package
+      run: dpkg-deb --build ./debian/mdx
+
+    - name: Set deb package name with version and architecture
+      run: |
+        mv ./debian/mdx.deb "./${PACKAGE_NAME}"
+
+    - name: Upload deb package to release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./mdx_${{ github.event.release.tag_name }}_amd64.deb
+        asset_name: mdx_${{ github.event.release.tag_name }}_amd64.deb
+        asset_content_type: application/x-deb
+

@@ -1,3 +1,5 @@
+name: Release Go Binaries in tar.gz
+
 on:
   release:
     types: [created]
