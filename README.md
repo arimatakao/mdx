@@ -26,14 +26,49 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Installation ⚙️
 
 1. Download `.tar.gz` archive from [releases page](https://github.com/arimatakao/mdx/releases).
-2. Unarchive the `.tar.gz` file.
+2. Unarchive the file:
+    - On Windows, use tools like 7-Zip.
+    - On macOS and Linux, use the terminal: `tar -xzf mdx-*.tar.gz`
+3. Run the executable:
+    - On Windows, open the `cmd`, navigate to the unarchived folder, and run `.\mdx.exe`
+    - On macOS and Linux, open the terminal, navigate to the unarchived folder, and run `./mdx`
 
-Open the unarchived folder and execute the `mdx` file to use the application.
-
-You can also install the application with `go`:
+Alternatively, you can install via `go`:
 
 ```
 go install github.com/arimatakao/mdx@latest
+```
+
+### Post-installation steps
+
+*This steps is optional. Perform it if you want to run `mdx` from anywhere in your terminal.*
+
+#### Windows
+
+Copy `mdx.exe` to a directory included in your `PATH` or add its directory to the `PATH`
+
+#### Linux
+
+Copy `mdx` file to `/usr/bin/`:
+
+```shell
+sudo cp mdx /usr/bin/
+# or
+sudo cp mdx /usr/local/bin/
+```
+
+#### MacOS
+
+Add `mdx` in your `PATH`:
+
+```
+export PATH=$PATH:</path/to/mdx>
+```
+
+Run `source` to restart the shell configuration:
+
+```shell
+source ~/.zshrc
 ```
 
 ## Usage examples️ 🖥️
