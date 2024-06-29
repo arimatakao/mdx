@@ -97,6 +97,22 @@ func (r ResponseChapter) GetChapterInfo() Chapter {
 	return r.Data
 }
 
+func (l ResponseChapterList) GetAllChapters(transgp string) []Chapter {
+	found := []Chapter{}
+	for _, c := range l.Data {
+		if len(found) != 0 {
+			if found[len(found)-1].Number() == c.Number() {
+				continue
+			}
+		}
+
+		if c.isTranslatedByGroup(transgp) {
+			found = append(found, c)
+		}
+	}
+	return found
+}
+
 func (l ResponseChapterList) GetChapters(lowest, highest int, transgp string) ([]Chapter, int) {
 	if len(l.Data) == 0 {
 		return []Chapter{}, 0

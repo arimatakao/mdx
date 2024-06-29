@@ -29,6 +29,7 @@ var (
 	isMergeChapters bool
 	outputExt       string
 	isLastChapter   bool
+	isAllChapters   bool
 )
 
 func init() {
@@ -48,6 +49,8 @@ func init() {
 		"translated-by", "t", "", "specify a part of the translation group's name")
 	downloadCmd.Flags().StringVarP(&chaptersRange,
 		"chapter", "c", "1", "specify chapters")
+	downloadCmd.Flags().BoolVarP(&isAllChapters,
+		"all", "a", false, "download all chapters")
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
 		"jpg", "j", false, "download compressed images for small output file size")
 	downloadCmd.Flags().BoolVarP(&isMergeChapters,
@@ -69,6 +72,11 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	}
 
 	if isLastChapter && mangaId == "" {
+		e.Println("Malformated URL")
+		os.Exit(0)
+	}
+
+	if isAllChapters && mangaId == "" {
 		e.Println("Malformated URL")
 		os.Exit(0)
 	}
@@ -139,6 +147,8 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		params.DownloadSpecificChapter(mangaChapterId)
 	} else if isLastChapter {
 		params.DownloadLastChapter(mangaId)
+	} else if isAllChapters {
+		params.DownloadAllChapters(mangaId)
 	} else {
 		params.DownloadChapters(mangaId)
 	}

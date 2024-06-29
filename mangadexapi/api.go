@@ -537,3 +537,90 @@ func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
 
 	return fullInfo, nil
 }
+
+// GetAllFullChaptersInfo retrieves the full information of all chapters of a manga.
+// Duplicate chapters are not added in the result.
+// Parameters:
+// - mangaId: the ID of the manga.
+// - language: the language of the chapters.
+// - translationGroup: the translation group of the chapters.
+// Returns:
+// - []ChapterFullInfo: a list of full information of all chapters.
+// - error: an error if there was a problem retrieving the information.
+func (a Clientapi) GetAllFullChaptersInfo(mangaId, language,
+	translationGroup string) ([]ChapterFullInfo, error) {
+	if mangaId == "" || language == "" {
+		return []ChapterFullInfo{}, ErrBadInput
+	}
+
+	isNotEmptyList := true
+	limit := 96
+	offset := 0
+
+	chapters := []Chapter{}
+
+	for isNotEmptyList {
+		query := fmt.Sprintf(
+			"limit=%d&offset=%d&translatedLanguage[]=%s"+
+				"&includes[]=scanlation_group&includes[]=user"+
+				"&order[volume]=asc&order[chapter]=asc&"+
+				"&includeEmptyPages=0",
+			limit, offset, language)
+
+		list := ResponseChapterList{}
+		respErr := ErrorResponse{}
+
+		resp, err := a.c.R().
+			SetError(&respErr).
+			SetResult(&list).
+			SetPathParam("id", mangaId).
+			SetQueryString(query).
+			Get(manga_feed_path)
+		if err != nil {
+			return []ChapterFullInfo{}, ErrConnection
+		}
+		if resp.IsError() {
+			return []ChapterFullInfo{}, &respErr
+		}
+
+		c := list.GetAllChapters(translationGroup)
+		chapters = append(chapters, c...)
+
+		if len(c) == 0 {
+			isNotEmptyList = false
+		}
+		offset += limit
+	}
+
+	chaptersInfo := []ChapterFullInfo{}
+
+	for _, chapter := range chapters {
+		chapImages := ResponseChapterImages{}
+		respErr := ErrorResponse{}
+
+		resp, err := a.c.R().
+			SetError(&respErr).
+			SetResult(&chapImages).
+			SetPathParam("id", chapter.ID).
+			Get(chapter_images_path)
+		if err != nil {
+			return []ChapterFullInfo{}, ErrConnection
+		}
+
+		if resp.IsError() {
+			return []ChapterFullInfo{}, &respErr
+		}
+
+		fullInfo := ChapterFullInfo{
+			info:            chapter,
+			DownloadBaseURL: chapImages.BaseURL,
+			HashId:          chapImages.ChapterMetaInfo.Hash,
+			PngFiles:        chapImages.ChapterMetaInfo.Data,
+			JpgFiles:        chapImages.ChapterMetaInfo.DataSaver,
+		}
+
+		chaptersInfo = append(chaptersInfo, fullInfo)
+	}
+
+	return chaptersInfo, nil
+}

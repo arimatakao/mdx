@@ -235,3 +235,37 @@ func (p dlParam) DownloadChapters(mangaId string) {
 		p.downloadChapters()
 	}
 }
+
+func (p dlParam) DownloadAllChapters(mangaId string) {
+	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
+	mangaInfo, err := p.getMangaInfo(mangaId)
+	if err != nil {
+		spinnerMangaInfo.Fail("Failed to get manga info")
+		os.Exit(1)
+	}
+	spinnerMangaInfo.Success("Fetched manga info")
+	p.mangaInfo = mangaInfo
+
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
+	p.chapters, err = client.GetAllFullChaptersInfo(mangaId, p.language, p.translateGroup)
+	if err != nil {
+		spinnerChapInfo.Fail("Failed to get chapters info")
+		e.Printf("While getting manga chapters: %v\n", err)
+		os.Exit(1)
+	}
+	spinnerChapInfo.Success("Fetched chapters info")
+
+	if len(p.chapters) == 0 {
+		e.Println("Chapters not found, try another language or translation group")
+		os.Exit(0)
+	}
+
+	fmt.Print(p.chapters)
+
+	printShortMangaInfo(mangaInfo)
+	if p.isMerge {
+		p.downloadMergeChapters()
+	} else {
+		p.downloadChapters()
+	}
+}
