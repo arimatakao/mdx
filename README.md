@@ -90,6 +90,11 @@ mdx dl mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download pdf format instead of cbz
 mdx dl -e pdf mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# or epub format
+mdx dl -e epub mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
+# download all chapters
+mdx dl -a mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download a specific chapter
 mdx dl -c 123 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
@@ -211,16 +216,16 @@ The size of each page in the PDF corresponds to the size of the image.
 - [X] Add metadata for cbz downloaded archive.
 - [X] Add check update subcommand.
 - [ ] Add flag to `download`:
-    - [X] `merge` - download chapter in one file.
+    - [X] `merge` - download chapters in one file.
     - [X] `last` - download latest chapter.
     - [X] `this` - download a specific chapter using a link provided by the user.
     - [X] `extension` - sets the extension of the output file. Add file support formats:
         - [X] pdf (include metadata).
         - [X] epub (include metadata).
+    - [X] `all` - download all chapters.
     - [ ] `volume` - download all chapters of specified volume.
     - [ ] `volume-range` - download all chapters of specified volume range.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
-    - [ ] `all` - download all chapters.
     - [ ] `oneshot` - download all oneshots of manga (if available).
 - [ ] Add self update mechanism.
 - [ ] Add search filter for `find` subcommand.
