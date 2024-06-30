@@ -8,6 +8,7 @@ require (
 	github.com/pterm/pterm v0.12.79
 	github.com/signintech/gopdf v0.26.0
 	github.com/spf13/cobra v1.8.0
+	golang.org/x/time v0.5.0
 )
 
 require (

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -116,9 +117,8 @@ func NewClient(userAgent string) Clientapi {
 	}
 
 	c := resty.New().
+		SetRateLimiter(rate.NewLimiter(rate.Every(time.Second*1), 1)).
 		SetLogger(silentLogger{}).
-		SetRetryCount(5).
-		SetRetryWaitTime(time.Millisecond*200).
 		SetBaseURL(base_url).
 		SetHeader("User-Agent", userAgent)
 
