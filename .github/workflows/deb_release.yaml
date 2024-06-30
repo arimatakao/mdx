@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: '1.22.4'
     - name: Build Go application
@@ -27,12 +27,15 @@ jobs:
         VERSION: ${{ github.event.release.tag_name }}
         PACKAGE_NAME: "mdx_${{ github.event.release.tag_name }}_amd64.deb"
       run: |
-        echo "Package: mdx" >> ./control
-        echo "Version: ${VERSION}" >> ./control
-        echo "Architecture: amd64" >> ./control
-        echo "Maintainer: arimatakao" >> ./control
-        echo "Description: cli manga downloader saves in CBZ PDF EPUB formats" >> ./control
-        echo "Homepage: https://github.com/arimatakao/mdx" >> ./control
+        VERSION=${{ github.event.release.tag_name }}
+        PACKAGE_NAME="mdx_${VERSION}_amd64.deb"
+        mkdir -p ./debian/mdx/DEBIAN
+        echo "Package: mdx" >> ./debian/mdx/DEBIAN/control
+        echo "Version: ${VERSION}" >> ./debian/mdx/DEBIAN/control
+        echo "Architecture: amd64" >> ./debian/mdx/DEBIAN/control
+        echo "Maintainer: arimatakao" >> ./debian/mdx/DEBIAN/control
+        echo "Description: cli manga downloader saves in CBZ PDF EPUB formats" >> ./debian/mdx/DEBIAN/control
+        echo "Homepage: https://github.com/arimatakao/mdx" >> ./debian/mdx/DEBIAN/control
         mkdir -p ./debian/mdx/usr/bin
         cp ./bin/mdx ./debian/mdx/usr/bin/mdx
         chmod +x ./debian/mdx/usr/bin/mdx
