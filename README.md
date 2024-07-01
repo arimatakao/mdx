@@ -209,7 +209,7 @@ The size of each page in the PDF corresponds to the size of the image.
 
 #### Getting error "While getting manga chapters: request is failed". I can't download anything. Why?
 
-This issue is related to the MangaDex API (https://api.mangadex.org/docs/2-limitations/), mdx is sending too many requests per second. Try downloading chapters later.
+This issue is related to the MangaDex API (https://api.mangadex.org/docs/2-limitations/#general-rate-limit), mdx is sending too many requests per second. Try downloading chapters later.
 
 ## TODO 📌
 
