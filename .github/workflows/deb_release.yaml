@@ -27,8 +27,8 @@ jobs:
         VERSION: ${{ github.event.release.tag_name }}
         PACKAGE_NAME: "mdx_${{ github.event.release.tag_name }}_amd64.deb"
       run: |
-        VERSION=${{ github.event.release.tag_name }}
-        PACKAGE_NAME="mdx_${VERSION}_amd64.deb"
+        VERSION=$(echo "${{ github.event.release.tag_name }}" | cut -c 2-)
+        PACKAGE_NAME="mdx_${{ github.event.release.tag_name }}_amd64.deb"
         mkdir -p ./debian/mdx/DEBIAN
         echo "Package: mdx" >> ./debian/mdx/DEBIAN/control
         echo "Version: ${VERSION}" >> ./debian/mdx/DEBIAN/control
