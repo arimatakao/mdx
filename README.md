@@ -94,6 +94,7 @@ mdx dl -e pdf mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 mdx dl -e epub mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download all chapters
+# i don't recommend using this flag - https://github.com/arimatakao/mdx?tab=readme-ov-file#getting-error-while-getting-manga-chapters-request-is-failed-i-cant-download-anything-why
 mdx dl -a mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download a specific chapter
