@@ -71,6 +71,13 @@ Run `source` to restart the shell configuration:
 source ~/.zshrc
 ```
 
+## Using in Nix, NixOS
+
+Using flakes:
+```
+nix run github:arimatakao/mdx
+```
+
 ## Usage examples️ 🖥️
 
 Download manga:
