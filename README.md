@@ -73,9 +73,14 @@ source ~/.zshrc
 
 ## Using in Nix, NixOS
 
-Using flakes:
+Using flakes to run `mdx` directly:
 ```
-nix run github:arimatakao/mdx
+nix run github:arimatakao/mdx -- download --help 
+```
+
+Using flakes to create a temporary shell with `mdx` available on the $PATH:
+```
+nix shell github:arimatakao/mdx
 ```
 
 ## Usage examples️ 🖥️
