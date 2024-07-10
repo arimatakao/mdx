@@ -49,3 +49,29 @@ func printChapterInfo(c mangadexapi.ChapterFullInfo) {
 	}
 	pterm.DefaultTable.WithData(tableData).Render()
 }
+
+func printUaNotification() {
+	y := pterm.NewStyle(pterm.FgYellow)
+	b := pterm.NewStyle(pterm.FgBlue)
+
+	b.Println("ПОМОГИ УКРАИНЦАМ В БОРЬБЕ")
+	y.Println("ПРОТИВ РОССИЙСКОЙ АГРЕССИИ")
+
+	field.Println("\n===ПОЛЕЗНЫЕ ССЫЛКИ===")
+	field.Println("Как война касается тебя лично?:")
+	dp.Println("https://war.ukraine.ua/ru/kak-vojna-kasaetsya-tebya-lychno")
+	field.Println("(СМИ) BBC Русская служба:")
+	dp.Println("https://www.bbc.com/russian\n" +
+		"https://t.me/bbcrussian")
+	field.Println("(СМИ) Радио Свобода:")
+	dp.Println("https://www.svoboda.org\n" +
+		"https://www.svoboda.org/block\n" +
+		"https://t.me/radiosvoboda")
+	field.Println("(СМИ) Голос Америки:")
+	dp.Println("https://www.golosameriki.com\n" +
+		"https://t.me/GolosAmeriki")
+	field.Print("Используй VPN для своей безопасности!\n\n")
+
+	b.Println("ПОМОГИ УКРАИНЕ В БОРЬБЕ")
+	y.Println("ПРОТИВ РОССИЙСКОЙ АГРЕССИИ")
+}
