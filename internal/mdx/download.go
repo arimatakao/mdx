@@ -116,6 +116,10 @@ func (p dlParam) downloadProcess(outputFile filekit.Container,
 		return ErrEmptyChapters
 	}
 
+	if p.language == "ru" {
+		printUaNotification()
+	}
+
 	files := chapter.PngFiles
 	imgExt := "png"
 	if p.isJpg {
