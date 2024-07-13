@@ -54,7 +54,7 @@ func printUaNotification() {
 	y := pterm.NewStyle(pterm.FgYellow)
 	b := pterm.NewStyle(pterm.FgBlue)
 
-	b.Println("ПОМОГИ УКРАИНЦАМ В БОРЬБЕ")
+	b.Println("ПОМОГИ УКРАИНЕ В БОРЬБЕ")
 	y.Println("ПРОТИВ РОССИЙСКОЙ АГРЕССИИ")
 
 	field.Println("\n===ПОЛЕЗНЫЕ ССЫЛКИ===")
