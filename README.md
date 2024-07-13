@@ -13,10 +13,6 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 </div>
 
-# Temporarily not working - https://github.com/arimatakao/mdx/issues/2
-
- I fixing it.
-
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux***.
@@ -114,17 +110,17 @@ mdx dl -e epub mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 mdx dl -a mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download a specific chapter
-mdx dl -c 123 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+mdx dl -c 3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # or set direct link to the chapter
 mdx dl --this mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
 # or
 mdx dl https://mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
 
 # download a range of chapters
-mdx dl -c 12-34 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+mdx dl -c 1-3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download a range of chapters and merge them in one file
-mdx dl -m -c 12-34 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+mdx dl -m -c 1-3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download last chapter
 mdx dl --last mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
@@ -136,7 +132,7 @@ mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 mdx dl -o your/dir mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # specify translation
-mdx dl -t "Some Group" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+mdx dl -t "Black Cat" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download compressed version (lower image quality and file size)
 mdx dl -j mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
@@ -227,6 +223,12 @@ The size of each page in the PDF corresponds to the size of the image.
 #### Getting error "While getting manga chapters: request is failed". I can't download anything. Why?
 
 This issue is related to the MangaDex API (https://api.mangadex.org/docs/2-limitations/#general-rate-limit), mdx is sending too many requests per second. Try downloading chapters later.
+
+#### Getting error "Chapters x-y not found, try another range, language, translation group etc."
+
+Maybe you didn't specify the translation group, chapter range, or language correctly. Make sure that the chapter can be opened on MangaDex (not on external resource).
+
+Sometimes it doesn't download or work correctly. Just try again later.
 
 ## TODO 📌
 
