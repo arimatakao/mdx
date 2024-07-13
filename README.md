@@ -71,6 +71,18 @@ Run `source` to restart the shell configuration:
 source ~/.zshrc
 ```
 
+## Using in Nix, NixOS
+
+Using flakes to run `mdx` directly:
+```
+nix run github:arimatakao/mdx -- download --help 
+```
+
+Using flakes to create a temporary shell with `mdx` available on the $PATH:
+```
+nix shell github:arimatakao/mdx
+```
+
 ## Usage examples️ 🖥️
 
 Download manga:
