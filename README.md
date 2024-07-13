@@ -75,7 +75,7 @@ source ~/.zshrc
 
 Using flakes to run `mdx` directly:
 ```
-nix run github:arimatakao/mdx -- download --help 
+nix run github:arimatakao/mdx -- download --help
 ```
 
 Using flakes to create a temporary shell with `mdx` available on the $PATH:
@@ -283,3 +283,4 @@ This project uses the following third-party libraries:
 
 - [arimatakao](https://github.com/arimatakao)
 - [wolandark](https://github.com/wolandark)
+- [nikololiahim](https://github.com/nikololiahim)
