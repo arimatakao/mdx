@@ -216,7 +216,7 @@ This issue is related to the MangaDex API (https://api.mangadex.org/docs/2-limit
 
 Maybe you didn't specify the translation group, chapter range, or language correctly. Make sure that the chapter can be opened on MangaDex (not on external resource).
 
-Sometimes it doesn't download or work correctly. Just try again later.
+Sometimes it doesn't download because of some problems on the MangaDex side. Just try again later.
 
 ## TODO 📌
 
