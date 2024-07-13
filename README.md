@@ -13,6 +13,10 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 </div>
 
+# Temporarily not working - https://github.com/arimatakao/mdx/issues/2
+
+ I fixing it.
+
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux***.
