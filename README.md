@@ -19,6 +19,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 - Downloads ***multiple chapters***.
 - Saves manga in ***CBZ, PDF, EPUB formats***.
 - Saves multiple chapters in ***one file***.
+- ***Interactive downloading mode***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Searches manga.
 - Displays information about manga.
@@ -38,6 +39,19 @@ Alternatively, you can install via `go`:
 ```
 go install github.com/arimatakao/mdx@latest
 ```
+
+### Using in Nix, NixOS
+
+Using flakes to run `mdx` directly:
+```
+nix run github:arimatakao/mdx -- download --help
+```
+
+Using flakes to create a temporary shell with `mdx` available on the $PATH:
+```
+nix shell github:arimatakao/mdx
+```
+
 
 ### Post-installation steps
 
@@ -71,19 +85,24 @@ Run `source` to restart the shell configuration:
 source ~/.zshrc
 ```
 
-## Using in Nix, NixOS
-
-Using flakes to run `mdx` directly:
-```
-nix run github:arimatakao/mdx -- download --help
-```
-
-Using flakes to create a temporary shell with `mdx` available on the $PATH:
-```
-nix shell github:arimatakao/mdx
-```
-
 ## Usage examples️ 🖥️
+
+Interactive downloading mode:
+
+```shell
+mdx dl -i
+```
+
+Demo of interactive mode:
+
+<div align="center">
+
+![demo](./.github/assets/interactive_mode_demo.gif)
+
+*Note: Your manga title should be more than 5 characters when searching to avoid errors.*
+
+</div>
+
 
 Download manga:
 
@@ -226,9 +245,13 @@ This issue is related to the MangaDex API (https://api.mangadex.org/docs/2-limit
 
 #### Getting error "Chapters x-y not found, try another range, language, translation group etc."
 
-Maybe you didn't specify the translation group, chapter range, or language correctly. Make sure that the chapter can be opened on MangaDex (not on external resource).
+Maybe you didn't specify the translation group, chapter range, or language correctly. **Make sure that the chapter can be opened on MangaDex (not on external resource).**
 
 Sometimes it doesn't download because of some problems on the MangaDex side. Just try again later.
+
+#### Getting an error in interactive mode when searching for manga. Why?
+
+Because your query should be more than 5 characters to avoid errors.
 
 ## TODO 📌
 
@@ -249,16 +272,17 @@ Sometimes it doesn't download because of some problems on the MangaDex side. Jus
     - [ ] `volume-range` - download all chapters of specified volume range.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `oneshot` - download all oneshots of manga (if available).
+- [X] Add interactive mode for `download` subcommand.
 - [ ] Add self update mechanism.
 - [ ] Add search filter for `find` subcommand.
 - [ ] Add flag `random` in `info` subcommand to get information about random manga.
-- [ ] Add interactive mode for `find` subcommand.
-- [ ] Add interactive mode for `download` subcommand.
+- [ ] ~~Add interactive mode for `find` subcommand.~~ (already added into `download` subcommand)
 
 ### Code
 
 - [X] Use `pterm` output instead `fmt`.
 - [X] Refactor `cmd` package.
+- [ ] Add rate limiter for client api.
 - [ ] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `internal/mdx` package.
