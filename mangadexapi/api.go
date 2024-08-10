@@ -368,7 +368,7 @@ func (a Clientapi) GetChapterImagesInFullInfo(chap Chapter) (ChapterFullInfo, er
 	}
 
 	fullInfo := ChapterFullInfo{
-		info:            chap,
+		Info:            chap,
 		DownloadBaseURL: chapImages.BaseURL,
 		HashId:          chapImages.ChapterMetaInfo.Hash,
 		PngFiles:        chapImages.ChapterMetaInfo.Data,
@@ -457,7 +457,7 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 		}
 
 		fullInfo := ChapterFullInfo{
-			info:            chapter,
+			Info:            chapter,
 			DownloadBaseURL: chapImages.BaseURL,
 			HashId:          chapImages.ChapterMetaInfo.Hash,
 			PngFiles:        chapImages.ChapterMetaInfo.Data,
@@ -528,7 +528,7 @@ func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
 	}
 
 	fullInfo := ChapterFullInfo{
-		info:            list.Data[0],
+		Info:            list.Data[0],
 		DownloadBaseURL: chapImages.BaseURL,
 		HashId:          chapImages.ChapterMetaInfo.Hash,
 		PngFiles:        chapImages.ChapterMetaInfo.Data,
@@ -612,7 +612,7 @@ func (a Clientapi) GetAllFullChaptersInfo(mangaId, language,
 		}
 
 		fullInfo := ChapterFullInfo{
-			info:            chapter,
+			Info:            chapter,
 			DownloadBaseURL: chapImages.BaseURL,
 			HashId:          chapImages.ChapterMetaInfo.Hash,
 			PngFiles:        chapImages.ChapterMetaInfo.Data,

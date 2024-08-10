@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
 	"github.com/go-shiori/go-epub"
@@ -72,10 +71,9 @@ func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName strin
 		return err
 	}
 
-	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
+	outputPath := safeOutputPath(outputDir, outputFileName, EPUB_EXT)
 
-	err = e.b.Write(filepath.Join(outputDir, outputFileName+".epub"))
+	err = e.b.Write(outputPath)
 	if err != nil {
 		return err
 	}

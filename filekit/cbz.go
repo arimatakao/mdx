@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
 )
@@ -74,10 +72,7 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 		return err
 	}
 
-	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
-
-	outputPath := filepath.Join(outputDir, outputFileName+".cbz")
+	outputPath := safeOutputPath(outputDir, outputFileName, CBZ_EXT)
 
 	return os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
 }

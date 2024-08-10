@@ -2,6 +2,10 @@ package filekit
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
 )
@@ -31,4 +35,21 @@ func NewContainer(extension string) (Container, error) {
 	}
 
 	return nil, ErrExtensionNotSupport
+}
+
+func safeOutputPath(outputDir, outputFileName, extension string) string {
+	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
+
+	outputPath := filepath.Join(outputDir, outputFileName+"."+extension)
+
+	for count := 1; ; count++ {
+		_, err := os.Stat(outputPath)
+		if errors.Is(err, os.ErrNotExist) {
+			break
+		}
+		outputPath = filepath.Join(outputDir,
+			fmt.Sprintf("%s (%d).%s", outputFileName, count, extension))
+	}
+	return outputPath
 }

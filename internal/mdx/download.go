@@ -3,7 +3,10 @@ package mdx
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/arimatakao/mdx/app"
 	"github.com/arimatakao/mdx/filekit"
@@ -48,6 +51,23 @@ func NewDownloadParam(chaptersRange string, lowestChapter, highestChapter int,
 	}
 }
 
+func (p dlParam) printDlInteractiveParams() {
+	printMangaInfo(p.mangaInfo)
+	field.Println("---")
+	dlChapterList := ""
+	for _, c := range p.chapters {
+		dlChapterList += " " + c.Number()
+	}
+	dp.Println(field.Sprint("Chapters:"), dlChapterList)
+	dp.Println(field.Sprint("Output directory: "), p.outputDir)
+	dp.Println(field.Sprint("Fileformat: "), p.outputExt)
+	isMerging := "no"
+	if p.isMerge {
+		isMerging = "yes"
+	}
+	dp.Println(field.Sprint("Merging chapters: "), isMerging)
+}
+
 func (p dlParam) getMangaInfo(mangaId string) (mangadexapi.MangaInfo, error) {
 	resp, err := client.GetMangaInfo(mangaId)
 	if err != nil {
@@ -73,8 +93,20 @@ func (p dlParam) downloadMergeChapters() {
 		}
 	}
 
-	filename := fmt.Sprintf("[%s] %s ch%s",
-		p.language, p.mangaInfo.Title("en"), p.chaptersRange)
+	chaptersRange := p.chapters[0].Info.Number()
+	if len(p.chapters) > 1 {
+		chaptersRange += "-" + p.chapters[len(p.chapters)-1].Number()
+	}
+
+	filename := ""
+	if p.chapters[0].Translator() == "" {
+		filename = fmt.Sprintf("[%s] %s ch. %s",
+			p.language, p.mangaInfo.Title("en"), chaptersRange)
+	} else {
+		filename = fmt.Sprintf("[%s] %s ch. %s | %s",
+			p.language, p.mangaInfo.Title("en"), chaptersRange, p.chapters[0].Translator())
+	}
+
 	metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, p.chapters[0])
 	err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, p.chaptersRange)
 	if err != nil {
@@ -99,8 +131,17 @@ func (p dlParam) downloadChapters() {
 			os.Exit(1)
 		}
 
-		filename := fmt.Sprintf("[%s] %s vol%s ch%s",
-			p.language, p.mangaInfo.Title("en"), chapter.Volume(), chapter.Number())
+		filename := ""
+		if chapter.Translator() == "" {
+			filename = fmt.Sprintf("[%s] %s vol. %s ch. %s",
+				p.language, p.mangaInfo.Title("en"), chapter.Volume(),
+				chapter.Number())
+		} else {
+			filename = fmt.Sprintf("[%s] %s vol. %s ch. %s | %s",
+				p.language, p.mangaInfo.Title("en"), chapter.Volume(),
+				chapter.Number(),
+				chapter.Translator())
+		}
 		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, chapter)
 		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
 		if err != nil {
@@ -267,6 +308,258 @@ func (p dlParam) DownloadAllChapters(mangaId string) {
 	fmt.Print(p.chapters)
 
 	printShortMangaInfo(mangaInfo)
+	if p.isMerge {
+		p.downloadMergeChapters()
+	} else {
+		p.downloadChapters()
+	}
+}
+
+const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                 // numnber | authors | title
+const OPTION_CHAPTER_TEMPLATE = "%d | vol. %s | ch. %s | %s" // number | volume | chapter | chapter title
+const OPTION_SAVING_TEMPLATE = "%d | %s"
+
+func toMangaInfoOptions(m []mangadexapi.MangaInfo) ([]string, map[string]string) {
+	printOptions := []string{}
+	associationNums := make(map[string]string)
+	for i, manga := range m {
+		printOptions = append(printOptions, fmt.Sprintf(OPTION_MANGA_TEMPLATE,
+			i+1, manga.Authors(), manga.Title("en")))
+		associationNums[strconv.Itoa(i+1)] = manga.ID
+	}
+	return printOptions, associationNums
+}
+
+func getMangaNumOption(option string) string {
+	return strings.Split(option, " | ")[0]
+}
+
+func toChaptersOptions(c []mangadexapi.Chapter) ([]string, map[string]string) {
+	options := []string{}
+	associationNums := make(map[string]string)
+	for i, chapter := range c {
+		options = append(options, fmt.Sprintf(OPTION_CHAPTER_TEMPLATE,
+			i+1, chapter.Volume(), chapter.Number(), chapter.Title()))
+		associationNums[strconv.Itoa(i+1)] = chapter.ID
+	}
+	return options, associationNums
+}
+
+func getChapterNumsFromOptions(options []string) []string {
+	i := []string{}
+	for _, o := range options {
+		i = append(i, strings.Split(o, " | ")[0])
+	}
+	return i
+}
+
+func toSavingOptions() []string {
+	options := []string{}
+	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 1, filekit.CBZ_EXT))
+	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 2, filekit.PDF_EXT))
+	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 3, filekit.EPUB_EXT))
+	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 4,
+		filekit.CBZ_EXT+" + merge chapters in one file"))
+	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 5,
+		filekit.PDF_EXT+" + merge chapters in one file"))
+	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 6,
+		filekit.EPUB_EXT+" + merge chapters in one file"))
+	return options
+}
+
+func getSavingOption(option string) (string, bool) {
+	parts := strings.Split(option, " | ")
+	if len(parts) != 2 {
+		return "", false
+	}
+	num, err := strconv.Atoi(parts[0])
+	if err != nil {
+		dp.Printfln("er %v", err)
+		return "", false
+	}
+	dp.Println(num)
+	switch num {
+	case 1:
+		return filekit.CBZ_EXT, false
+	case 2:
+		return filekit.PDF_EXT, false
+	case 3:
+		return filekit.EPUB_EXT, false
+	case 4:
+		return filekit.CBZ_EXT, true
+	case 5:
+		return filekit.PDF_EXT, true
+	case 6:
+		return filekit.EPUB_EXT, true
+	default:
+		return filekit.CBZ_EXT, false
+	}
+}
+
+func (p dlParam) RunInteractiveDownload() {
+	foundManga := []string{}
+	associationMangaIdNums := make(map[string]string)
+	for isSearching := true; isSearching; {
+		clearOutput()
+		searchTitle, _ := pterm.DefaultInteractiveTextInput.
+			WithTextStyle(field).Show("Search manga")
+
+		searchResult := []mangadexapi.MangaInfo{}
+
+		for offset := 0; ; offset += 50 {
+			mangaList, err := client.Find(searchTitle, 50, offset, true)
+			if err != nil {
+				e.Printfln("%v", err)
+				os.Exit(1)
+			}
+
+			if len(mangaList.Data) == 0 {
+				break
+			}
+
+			searchResult = append(searchResult, mangaList.List()...)
+		}
+
+		if len(searchResult) == 0 {
+			isContinue, _ := pterm.DefaultInteractiveConfirm.
+				Show("Manga not found, try again?")
+			isSearching = isContinue
+			continue
+		}
+
+		isSearching = false
+		printOptions, associationNums := toMangaInfoOptions(searchResult)
+		maps.Copy(associationMangaIdNums, associationNums)
+		foundManga = append(foundManga, printOptions...)
+	}
+
+	mangaInfo := mangadexapi.MangaInfo{}
+	for isSelected := false; !isSelected; {
+		clearOutput()
+		mangaOption, _ := pterm.DefaultInteractiveSelect.WithOptions(foundManga).
+			WithMaxHeight(8).Show("Select manga from list")
+		mangaId := associationMangaIdNums[getMangaNumOption(mangaOption)]
+
+		respMangaInfo, err := client.GetMangaInfo(mangaId)
+		if err != nil {
+			e.Printfln("%v", err)
+			os.Exit(1)
+		}
+
+		printMangaInfo(respMangaInfo.Data)
+
+		isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct manga?")
+		if isSelected {
+			mangaInfo = respMangaInfo.Data
+		}
+	}
+	p.mangaInfo = mangaInfo
+
+	clearOutput()
+	translatedLanguage, _ := pterm.DefaultInteractiveSelect.
+		WithOptions(mangaInfo.TranslatedLanguages()).WithFilter(false).
+		WithMaxHeight(8).Show("Select language")
+	p.language = translatedLanguage
+
+	foundChapters := []mangadexapi.Chapter{}
+	for offset := 0; ; offset += 50 {
+		clearOutput()
+		chapterlist, err := client.GetChaptersList(96, offset, mangaInfo.ID, p.language)
+		if err != nil {
+			e.Printfln("%v", err)
+			os.Exit(1)
+		}
+
+		if len(chapterlist.Data) == 0 {
+			break
+		}
+
+		foundChapters = append(foundChapters, chapterlist.Data...)
+	}
+
+	if len(foundChapters) == 0 {
+		e.Println("Chapters not found, try another language or translation group")
+		return
+	}
+
+	associationChapterIdNums := make(map[string]string)
+	selectedChapterNums := []string{}
+	for isSelected := false; !isSelected; {
+		clearOutput()
+		printChapterOptions, associationIdNums := toChaptersOptions(foundChapters)
+		selectedChapters, _ := pterm.DefaultInteractiveMultiselect.
+			WithOptions(printChapterOptions).
+			WithMaxHeight(16).Show("Select chapters from list")
+
+		if len(selectedChapters) == 0 {
+			isContinue, _ := pterm.DefaultInteractiveConfirm.
+				Show("Chapters not selected, try again?")
+			if !isContinue {
+				return
+			}
+		}
+
+		isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct chapters?")
+		if isSelected {
+			selectedChapterNums = append(selectedChapterNums,
+				getChapterNumsFromOptions(selectedChapters)...)
+			maps.Copy(associationChapterIdNums, associationIdNums)
+		}
+	}
+
+	clearOutput()
+	chaptersFullInfo := []mangadexapi.ChapterFullInfo{}
+	for _, num := range selectedChapterNums {
+		chapterFullInfo := mangadexapi.ChapterFullInfo{}
+		for _, chapter := range foundChapters {
+			if chapter.ID == associationChapterIdNums[num] {
+				chapterFullInfo.Info = chapter
+			}
+		}
+
+		imageInfo, err := client.GetChapterImageList(associationChapterIdNums[num])
+		if err != nil {
+			e.Printf("%v", err)
+			os.Exit(1)
+		}
+		chapterFullInfo.DownloadBaseURL = imageInfo.BaseURL
+		chapterFullInfo.HashId = imageInfo.ChapterMetaInfo.Hash
+		chapterFullInfo.PngFiles = imageInfo.ChapterMetaInfo.Data
+		chapterFullInfo.JpgFiles = imageInfo.ChapterMetaInfo.DataSaver
+
+		chaptersFullInfo = append(chaptersFullInfo, chapterFullInfo)
+	}
+	p.chapters = chaptersFullInfo
+
+	savingOption, _ := pterm.DefaultInteractiveSelect.
+		WithOptions(toSavingOptions()).
+		WithMaxHeight(8).
+		Show("Select saving options")
+
+	outputExt, isMerge := getSavingOption(savingOption)
+	p.outputExt = outputExt
+	p.isMerge = isMerge
+
+	clearOutput()
+	outputDir, _ := pterm.DefaultInteractiveTextInput.
+		WithTextStyle(field).
+		Show("Save path (press Enter for save in current folder)")
+
+	if outputDir == "" {
+		outputDir = "."
+	}
+	p.outputDir = outputDir
+
+	clearOutput()
+	p.printDlInteractiveParams()
+	isCorrectDlParams, _ := pterm.DefaultInteractiveConfirm.
+		Show("Is correct downloading parameters?")
+	if !isCorrectDlParams {
+		field.Println("Run interactive mode again!")
+		return
+	}
+
+	field.Println("Downloading chapters...")
 	if p.isMerge {
 		p.downloadMergeChapters()
 	} else {

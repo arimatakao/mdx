@@ -14,6 +14,10 @@ var (
 	field = pterm.NewStyle(pterm.FgGreen, pterm.BgDefault, pterm.Bold)
 )
 
+func clearOutput() {
+	dp.Print("\033[H\033[J")
+}
+
 func printMangaInfo(i mangadexapi.MangaInfo) {
 	dp.Println(field.Sprint("Link: "), dp.Sprintf("https://mangadex.org/title/%s", i.ID))
 	dp.Println(field.Sprint("Title: "), i.Title("en"))

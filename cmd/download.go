@@ -30,6 +30,8 @@ var (
 	outputExt       string
 	isLastChapter   bool
 	isAllChapters   bool
+
+	isInteractiveMode bool
 )
 
 func init() {
@@ -57,9 +59,15 @@ func init() {
 		"merge", "m", false, "merge downloaded chapters into one file")
 	downloadCmd.Flags().BoolVarP(&isLastChapter,
 		"last", "", false, "download last chapter")
+	downloadCmd.Flags().BoolVarP(&isInteractiveMode,
+		"interactive", "i", false, "interactive download mode")
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
+	if isInteractiveMode {
+		return
+	}
+
 	if len(args) == 0 && mangaUrl == "" && mangaChapterUrl == "" {
 		cmd.Help()
 		os.Exit(0)
@@ -143,7 +151,9 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 func downloadManga(cmd *cobra.Command, args []string) {
 	params := mdx.NewDownloadParam(chaptersRange, lowestChapter, highestChapter, language,
 		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters)
-	if mangaChapterId != "" {
+	if isInteractiveMode {
+		params.RunInteractiveDownload()
+	} else if mangaChapterId != "" {
 		params.DownloadSpecificChapter(mangaChapterId)
 	} else if isLastChapter {
 		params.DownloadLastChapter(mangaId)

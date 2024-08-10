@@ -180,7 +180,7 @@ type ResponseChapterImages struct {
 }
 
 type ChapterFullInfo struct {
-	info            Chapter
+	Info            Chapter
 	DownloadBaseURL string
 	HashId          string
 	PngFiles        []string
@@ -188,31 +188,31 @@ type ChapterFullInfo struct {
 }
 
 func (c ChapterFullInfo) Title() string {
-	return c.info.Title()
+	return c.Info.Title()
 }
 
 func (c ChapterFullInfo) Number() string {
-	return c.info.Number()
+	return c.Info.Number()
 }
 
 func (c ChapterFullInfo) Volume() string {
-	return c.info.Volume()
+	return c.Info.Volume()
 }
 
 func (c ChapterFullInfo) Language() string {
-	return c.info.Language()
+	return c.Info.Language()
 }
 
 func (c ChapterFullInfo) Translator() string {
-	return c.info.getTranslator()
+	return c.Info.getTranslator()
 }
 
 func (c ChapterFullInfo) UploadedBy() string {
-	return c.info.UploadedBy()
+	return c.Info.UploadedBy()
 }
 
 func (c ChapterFullInfo) PagesCount() int {
-	return c.info.PagesCount()
+	return c.Info.PagesCount()
 }
 
 func (c ChapterFullInfo) ImagesBaseUrl() string {

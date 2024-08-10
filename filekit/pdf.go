@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"image"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -51,7 +50,9 @@ func (p pdfFile) WriteOnDiskAndClose(outputDir, outputFileName string,
 	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
 	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
 
-	err = p.pdf.WritePdf(filepath.Join(outputDir, outputFileName+".pdf"))
+	outputPath := safeOutputPath(outputDir, outputFileName, PDF_EXT)
+
+	err = p.pdf.WritePdf(outputPath)
 	if err != nil {
 		return err
 	}
