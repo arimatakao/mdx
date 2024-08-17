@@ -302,6 +302,7 @@ This project uses the following third-party libraries:
 - PTerm (https://github.com/pterm/pterm) - Licensed under the MIT
 - gopdf (https://github.com/signintech/gopdf) - Licensed under the MIT
 - go-epub (https://github.com/go-shiori/go-epub) - Licensed under the MIT
+- consolesize-go (https://github.com/nathan-fiscaletti/consolesize-go) - Licensed under the MIT
 
 ## Contributors
 

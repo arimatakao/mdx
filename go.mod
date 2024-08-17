@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/go-resty/resty/v2 v2.13.1
 	github.com/go-shiori/go-epub v1.2.1
+	github.com/nathan-fiscaletti/consolesize-go v0.0.0-20220204101620-317176b6684d
 	github.com/pterm/pterm v0.12.79
 	github.com/signintech/gopdf v0.26.0
 	github.com/spf13/cobra v1.8.0

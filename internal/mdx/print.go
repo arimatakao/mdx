@@ -2,6 +2,7 @@ package mdx
 
 import (
 	"github.com/arimatakao/mdx/mangadexapi"
+	"github.com/nathan-fiscaletti/consolesize-go"
 	"github.com/pterm/pterm"
 )
 
@@ -16,6 +17,19 @@ var (
 
 func clearOutput() {
 	dp.Print("\033[H\033[J")
+}
+
+func getTerminalSize() (int, int) {
+	cols, rows := consolesize.GetConsoleSize()
+
+	if cols < 14 {
+		cols = 14
+	}
+	if rows < 5 {
+		rows = 5
+	}
+
+	return cols, rows
 }
 
 func printMangaInfo(i mangadexapi.MangaInfo) {

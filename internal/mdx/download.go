@@ -305,8 +305,6 @@ func (p dlParam) DownloadAllChapters(mangaId string) {
 		os.Exit(0)
 	}
 
-	fmt.Print(p.chapters)
-
 	printShortMangaInfo(mangaInfo)
 	if p.isMerge {
 		p.downloadMergeChapters()
@@ -319,12 +317,15 @@ const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                 // numnber | author
 const OPTION_CHAPTER_TEMPLATE = "%d | vol. %s | ch. %s | %s" // number | volume | chapter | chapter title
 const OPTION_SAVING_TEMPLATE = "%d | %s"
 
-func toMangaInfoOptions(m []mangadexapi.MangaInfo) ([]string, map[string]string) {
+func toMangaInfoOptions(m []mangadexapi.MangaInfo, maxOptionSize int) ([]string, map[string]string) {
 	printOptions := []string{}
 	associationNums := make(map[string]string)
 	for i, manga := range m {
-		printOptions = append(printOptions, fmt.Sprintf(OPTION_MANGA_TEMPLATE,
-			i+1, manga.Authors(), manga.Title("en")))
+		option := fmt.Sprintf(OPTION_MANGA_TEMPLATE, i+1, manga.Authors(), manga.Title("en"))
+		if len(option)+2 >= maxOptionSize {
+			option = option[:maxOptionSize-2]
+		}
+		printOptions = append(printOptions, option)
 		associationNums[strconv.Itoa(i+1)] = manga.ID
 	}
 	return printOptions, associationNums
@@ -334,12 +335,16 @@ func getMangaNumOption(option string) string {
 	return strings.Split(option, " | ")[0]
 }
 
-func toChaptersOptions(c []mangadexapi.Chapter) ([]string, map[string]string) {
+func toChaptersOptions(c []mangadexapi.Chapter, maxOptionSize int) ([]string, map[string]string) {
 	options := []string{}
 	associationNums := make(map[string]string)
 	for i, chapter := range c {
-		options = append(options, fmt.Sprintf(OPTION_CHAPTER_TEMPLATE,
-			i+1, chapter.Volume(), chapter.Number(), chapter.Title()))
+		option := fmt.Sprintf(OPTION_CHAPTER_TEMPLATE,
+			i+1, chapter.Volume(), chapter.Number(), chapter.Title())
+		if len(option)+6 >= maxOptionSize {
+			option = option[:maxOptionSize-6]
+		}
+		options = append(options, option)
 		associationNums[strconv.Itoa(i+1)] = chapter.ID
 	}
 	return options, associationNums
@@ -397,6 +402,8 @@ func getSavingOption(option string) (string, bool) {
 }
 
 func (p dlParam) RunInteractiveDownload() {
+	cols, rows := getTerminalSize()
+
 	foundManga := []string{}
 	associationMangaIdNums := make(map[string]string)
 	for isSearching := true; isSearching; {
@@ -428,7 +435,7 @@ func (p dlParam) RunInteractiveDownload() {
 		}
 
 		isSearching = false
-		printOptions, associationNums := toMangaInfoOptions(searchResult)
+		printOptions, associationNums := toMangaInfoOptions(searchResult, cols)
 		maps.Copy(associationMangaIdNums, associationNums)
 		foundManga = append(foundManga, printOptions...)
 	}
@@ -437,7 +444,7 @@ func (p dlParam) RunInteractiveDownload() {
 	for isSelected := false; !isSelected; {
 		clearOutput()
 		mangaOption, _ := pterm.DefaultInteractiveSelect.WithOptions(foundManga).
-			WithMaxHeight(8).Show("Select manga from list")
+			WithMaxHeight(rows - 2).Show("Select manga from list")
 		mangaId := associationMangaIdNums[getMangaNumOption(mangaOption)]
 
 		respMangaInfo, err := client.GetMangaInfo(mangaId)
@@ -458,7 +465,7 @@ func (p dlParam) RunInteractiveDownload() {
 	clearOutput()
 	translatedLanguage, _ := pterm.DefaultInteractiveSelect.
 		WithOptions(mangaInfo.TranslatedLanguages()).WithFilter(false).
-		WithMaxHeight(8).Show("Select language")
+		WithMaxHeight(rows - 2).Show("Select language")
 	p.language = translatedLanguage
 
 	foundChapters := []mangadexapi.Chapter{}
@@ -486,10 +493,10 @@ func (p dlParam) RunInteractiveDownload() {
 	selectedChapterNums := []string{}
 	for isSelected := false; !isSelected; {
 		clearOutput()
-		printChapterOptions, associationIdNums := toChaptersOptions(foundChapters)
+		printChapterOptions, associationIdNums := toChaptersOptions(foundChapters, cols)
 		selectedChapters, _ := pterm.DefaultInteractiveMultiselect.
 			WithOptions(printChapterOptions).
-			WithMaxHeight(16).Show("Select chapters from list")
+			WithMaxHeight(rows - 3).Show("Select chapters from list")
 
 		if len(selectedChapters) == 0 {
 			isContinue, _ := pterm.DefaultInteractiveConfirm.
@@ -533,7 +540,7 @@ func (p dlParam) RunInteractiveDownload() {
 
 	savingOption, _ := pterm.DefaultInteractiveSelect.
 		WithOptions(toSavingOptions()).
-		WithMaxHeight(8).
+		WithMaxHeight(rows - 2).
 		Show("Select saving options")
 
 	outputExt, isMerge := getSavingOption(savingOption)
