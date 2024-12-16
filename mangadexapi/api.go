@@ -117,10 +117,13 @@ func NewClient(userAgent string) Clientapi {
 
 	c := resty.New().
 		SetRetryCount(5).
-		SetRetryWaitTime(time.Second*2).
+		SetRetryWaitTime(time.Second*10).
 		SetLogger(silentLogger{}).
 		SetBaseURL(base_url).
-		SetHeader("User-Agent", userAgent)
+		SetHeader("User-Agent", userAgent).
+		AddRetryCondition(func(r *resty.Response, err error) bool {
+			return r.StatusCode() == 429
+		})
 
 	return Clientapi{
 		c: c,
