@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pterm/pterm"
 )
@@ -13,16 +14,16 @@ type findParams struct {
 	isDoujinshiAllow bool
 	printedCount     int
 	offset           int
-	outputFile       bool
+	outputToFile     bool
 }
 
-func NewFindParams(title string, isDoujinshiAllow bool, outputFile bool) findParams {
+func NewFindParams(title string, isDoujinshiAllow bool, outputToFile bool) findParams {
 	return findParams{
 		title:            title,
 		isDoujinshiAllow: isDoujinshiAllow,
 		printedCount:     25,
 		offset:           0,
-		outputFile:       outputFile,
+		outputToFile:     outputToFile,
 	}
 }
 
@@ -42,7 +43,7 @@ func (p findParams) Find() {
 	spinner.Success("Manga found!")
 
 	// If output file is specified, fetch all results and save to JSON
-	if p.outputFile {
+	if p.outputToFile {
 		// If there are more results, fetch them all
 		allResults := response
 		currentOffset := p.printedCount
@@ -64,15 +65,17 @@ func (p findParams) Find() {
 			e.Printf("error while marshaling JSON: %v\n", err)
 			os.Exit(1)
 		}
+		timeStamp := time.Now().Format("20060102")
+		fileName := fmt.Sprintf("Search-Results_%s.json", timeStamp)
 
-		err = os.WriteFile("output.json", jsonData, 0644)
+		err = os.WriteFile(fileName, jsonData, 0644)
 		if err != nil {
 			e.Printf("error while writing JSON file: %v\n", err)
 			os.Exit(1)
 		}
 
-		spinner.Success(fmt.Sprintf("All %d results saved to output.json", response.Total))
-		// Don't output to console since it was saved to "output.json"
+		spinner.Success("All %d results saved to %s", response.Total, fileName)
+
 		return
 	}
 
