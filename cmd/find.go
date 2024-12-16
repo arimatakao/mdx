@@ -15,6 +15,7 @@ var (
 	}
 	title            string
 	isDoujinshiAllow bool
+	outputFile       bool
 )
 
 func init() {
@@ -24,10 +25,12 @@ func init() {
 		"title", "t", "", "specifies the title of the manga to search for")
 	findCmd.Flags().BoolVarP(&isDoujinshiAllow,
 		"doujinshi", "d", false, "show doujinshi in list")
+	findCmd.Flags().BoolVarP(&outputFile,
+		"outputFile", "o", false, "Save the output to `output.json`")
 
 	findCmd.MarkFlagRequired("title")
 }
 
 func find(cmd *cobra.Command, args []string) {
-	mdx.NewFindParams(title, isDoujinshiAllow).Find()
+	mdx.NewFindParams(title, isDoujinshiAllow, outputFile).Find()
 }
