@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -16,7 +17,9 @@ import (
 )
 
 var (
-	ErrEmptyChapters = errors.New("empty chapters")
+	ErrEmptyChapters         = errors.New("empty chapters")
+	selectedChapterNums      []string
+	associationChapterIdNums map[string]string
 )
 
 type dlParam struct {
@@ -24,7 +27,10 @@ type dlParam struct {
 	chapters       []mangadexapi.ChapterFullInfo
 	lowestChapter  int
 	highestChapter int
+	lowestVolume   int
+	highestVolume  int
 	chaptersRange  string
+	volumesRange   string
 	language       string
 	translateGroup string
 	outputDir      string
@@ -33,7 +39,7 @@ type dlParam struct {
 	isMerge        bool
 }
 
-func NewDownloadParam(chaptersRange string, lowestChapter, highestChapter int,
+func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter, lowestVolume, highestVolume int,
 	language, translateGroup, outputDir, outputExt string, isJpg, isMerge bool) dlParam {
 
 	return dlParam{
@@ -41,7 +47,10 @@ func NewDownloadParam(chaptersRange string, lowestChapter, highestChapter int,
 		chapters:       []mangadexapi.ChapterFullInfo{},
 		lowestChapter:  lowestChapter,
 		highestChapter: highestChapter,
+		lowestVolume:   lowestVolume,
+		highestVolume:  highestVolume,
 		chaptersRange:  chaptersRange,
+		volumesRange:   volumesRange,
 		language:       language,
 		translateGroup: translateGroup,
 		outputDir:      outputDir,
@@ -54,11 +63,15 @@ func NewDownloadParam(chaptersRange string, lowestChapter, highestChapter int,
 func (p dlParam) printDlInteractiveParams() {
 	printMangaInfo(p.mangaInfo)
 	field.Println("---")
-	dlChapterList := ""
+	dlChapterList, dlVolumeList := "", ""
 	for _, c := range p.chapters {
 		dlChapterList += " " + c.Number()
+		if !strings.Contains(dlVolumeList, c.Volume()) {
+			dlVolumeList += " " + c.Volume()
+		}
 	}
 	dp.Println(field.Sprint("Chapters:"), dlChapterList)
+	dp.Println(field.Sprint("Volumes:"), dlVolumeList)
 	dp.Println(field.Sprint("Output directory: "), p.outputDir)
 	dp.Println(field.Sprint("Fileformat: "), p.outputExt)
 	isMerging := "no"
@@ -485,35 +498,105 @@ func (p dlParam) RunInteractiveDownload() {
 	}
 
 	if len(foundChapters) == 0 {
-		e.Println("Chapters not found, try another language or translation group")
+		e.Println("Chapters and/or volumes not found, try another language or translation group")
 		return
 	}
 
-	associationChapterIdNums := make(map[string]string)
-	selectedChapterNums := []string{}
-	for isSelected := false; !isSelected; {
-		clearOutput()
-		printChapterOptions, associationIdNums := toChaptersOptions(foundChapters, cols)
-		selectedChapters, _ := pterm.DefaultInteractiveMultiselect.
-			WithOptions(printChapterOptions).
-			WithMaxHeight(rows - 3).Show("Select chapters from list")
+	downloadOption, _ := pterm.DefaultInteractiveSelect.
+		WithOptions([]string{"Download by Volume", "Download by Chapter"}).
+		WithMaxHeight(rows - 2).Show("Select download option")
 
-		if len(selectedChapters) == 0 {
-			isContinue, _ := pterm.DefaultInteractiveConfirm.
-				Show("Chapters not selected, try again?")
-			if !isContinue {
-				return
+	selectedChapterNums := []string{}
+	associationChapterIdNums := make(map[string]string)
+
+	if downloadOption == "Download by Volume" {
+		volumeChapterMap := make(map[string][]mangadexapi.Chapter)
+		for _, chapter := range foundChapters {
+			volume := chapter.Volume()
+			volumeChapterMap[volume] = append(volumeChapterMap[volume], chapter)
+		}
+
+		selectedVolumes := []string{}
+		for isSelected := false; !isSelected; {
+			clearOutput()
+
+			// Prepare options with volume and chapter range
+			printVolumeOptions := []string{}
+			volumes := make([]int, 0, len(volumeChapterMap))
+			for volume := range volumeChapterMap {
+				vol, _ := strconv.Atoi(volume)
+				volumes = append(volumes, vol)
+			}
+			sort.Ints(volumes)
+
+			for _, vol := range volumes {
+				volume := strconv.Itoa(vol)
+				chapters := volumeChapterMap[volume]
+				if len(chapters) > 0 {
+					startChapter := chapters[0].Number()
+					endChapter := chapters[len(chapters)-1].Number()
+					option := fmt.Sprintf(
+						"%s | Volume %s | Chapters %s-%s",
+						p.mangaInfo.Title("en"), volume, startChapter, endChapter,
+					)
+					printVolumeOptions = append(printVolumeOptions, option)
+				}
+			}
+
+			selectedVolumes, _ = pterm.DefaultInteractiveMultiselect.
+				WithOptions(printVolumeOptions).
+				WithMaxHeight(rows - 3).Show("Select volumes from list")
+
+			if len(selectedVolumes) == 0 {
+				isContinue, _ := pterm.DefaultInteractiveConfirm.
+					Show("Volumes not selected, try again?")
+				if !isContinue {
+					return
+				}
+			}
+
+			isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct volumes?")
+			if isSelected {
+				// Build the actual "UI index -> chapter ID" map (just like we do for chapters)
+				// We'll keep track of a “virtual” selection index (i) for each chapter found inside each volume.
+				i := 1
+				for _, selectedVolume := range selectedVolumes {
+					// Extract volume number from "xxx | Volume NN |..."
+					volumeStr := strings.TrimSpace(strings.Split(selectedVolume, "|")[1][7:])
+					// For each chapter in that volume
+					for _, ch := range volumeChapterMap[volumeStr] {
+						// We store "i -> chapter.ID" into associationChapterIdNums
+						idx := strconv.Itoa(i)
+						associationChapterIdNums[idx] = ch.ID
+						selectedChapterNums = append(selectedChapterNums, idx)
+						i++
+					}
+				}
 			}
 		}
+	} else {
+		for isSelected := false; !isSelected; {
+			clearOutput()
+			printChapterOptions, associationIdNums := toChaptersOptions(foundChapters, cols)
+			selectedChapters, _ := pterm.DefaultInteractiveMultiselect.
+				WithOptions(printChapterOptions).
+				WithMaxHeight(rows - 3).Show("Select chapters from list")
 
-		isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct chapters?")
-		if isSelected {
-			selectedChapterNums = append(selectedChapterNums,
-				getChapterNumsFromOptions(selectedChapters)...)
-			maps.Copy(associationChapterIdNums, associationIdNums)
+			if len(selectedChapters) == 0 {
+				isContinue, _ := pterm.DefaultInteractiveConfirm.
+					Show("Chapters not selected, try again?")
+				if !isContinue {
+					return
+				}
+			}
+
+			isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct chapters?")
+			if isSelected {
+				selectedChapterNums = append(selectedChapterNums, getChapterNumsFromOptions(selectedChapters)...)
+				maps.Copy(associationChapterIdNums, associationIdNums)
+			}
 		}
 	}
-
 	clearOutput()
 	chaptersFullInfo := []mangadexapi.ChapterFullInfo{}
 	for _, num := range selectedChapterNums {
@@ -566,7 +649,7 @@ func (p dlParam) RunInteractiveDownload() {
 		return
 	}
 
-	field.Println("Downloading chapters...")
+	field.Println("Downloading selections...")
 	if p.isMerge {
 		p.downloadMergeChapters()
 	} else {
