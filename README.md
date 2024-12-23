@@ -282,7 +282,7 @@ Because your query should be more than 5 characters to avoid errors.
 
 - [X] Use `pterm` output instead `fmt`.
 - [X] Refactor `cmd` package.
-- [ ] Add rate limiter for client api.
+- [X] Add rate limiter for client api.
 - [ ] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `internal/mdx` package.
