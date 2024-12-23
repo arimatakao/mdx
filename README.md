@@ -268,8 +268,8 @@ Because your query should be more than 5 characters to avoid errors.
         - [X] pdf (include metadata).
         - [X] epub (include metadata).
     - [X] `all` - download all chapters.
-    - [ ] `volume` - download all chapters of specified volume.
-    - [ ] `volume-range` - download all chapters of specified volume range.
+    - [X] `volume` - download all chapters of specified volume.
+    - [X] `volume-range` - download all chapters of specified volume range.
     - [ ] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `oneshot` - download all oneshots of manga (if available).
 - [X] Add interactive mode for `download` subcommand.
