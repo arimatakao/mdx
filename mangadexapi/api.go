@@ -19,6 +19,7 @@ const (
 	manga_path                 = "/manga"
 	specific_manga_path        = "/manga/{id}"
 	manga_feed_path            = "/manga/{id}/feed"
+	manga_aggregate_path       = "/manga/{id}/aggregate"
 	chapter_info_path          = "/chapter/{id}"
 	chapter_images_path        = "/at-home/server/{id}"
 	download_high_quility_path = "/data/{chapterHash}/{imageFilename}"
@@ -471,6 +472,31 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 	}
 
 	return chaptersInfo, nil
+}
+
+func (a Clientapi) GetChaptersByVolume(mangaId string) (ResponseVolumes, error) {
+
+	if mangaId == "" {
+		return ResponseVolumes{}, ErrBadInput
+	}
+
+	volumes := ResponseVolumes{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&volumes).
+		SetPathParam("id", mangaId).
+		Get(manga_aggregate_path)
+	if err != nil {
+		return ResponseVolumes{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return ResponseVolumes{}, &respErr
+	}
+
+	return volumes, nil
 }
 
 // GetLastChapterFullInfo retrieves the full information of the last chapter of a manga.
