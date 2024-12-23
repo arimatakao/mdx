@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -23,9 +24,12 @@ var (
 	outputDir       string
 	language        string
 	translateGroup  string
+	volumesRange    string
 	chaptersRange   string
 	lowestChapter   int
 	highestChapter  int
+	lowestVolume    int
+	highestVolume   int
 	isMergeChapters bool
 	outputExt       string
 	isLastChapter   bool
@@ -51,6 +55,8 @@ func init() {
 		"translated-by", "t", "", "specify a part of the translation group's name")
 	downloadCmd.Flags().StringVarP(&chaptersRange,
 		"chapter", "c", "1", "specify chapters")
+	downloadCmd.Flags().StringVarP(&volumesRange,
+		"volume", "v", "0", "specify volumes")
 	downloadCmd.Flags().BoolVarP(&isAllChapters,
 		"all", "a", false, "download all chapters")
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
@@ -64,6 +70,7 @@ func init() {
 }
 
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
+	urlErrorMessage := "Malformatted URL."
 	if isInteractiveMode {
 		return
 	}
@@ -80,12 +87,12 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	}
 
 	if isLastChapter && mangaId == "" {
-		e.Println("Malformated URL")
+		e.Println(urlErrorMessage)
 		os.Exit(0)
 	}
 
 	if isAllChapters && mangaId == "" {
-		e.Println("Malformated URL")
+		e.Println(urlErrorMessage)
 		os.Exit(0)
 	}
 
@@ -96,7 +103,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	}
 
 	if mangaId == "" && mangaChapterId == "" {
-		e.Println("Malformated URL")
+		e.Println(urlErrorMessage)
 		os.Exit(0)
 	}
 
@@ -111,45 +118,59 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	singleChapter, err := strconv.Atoi(chaptersRange)
-	if err == nil {
-		if singleChapter < 0 {
-			e.Println("Malformated chapters format")
-			os.Exit(0)
-		}
+	lowestChapter, highestChapter = parseRange(volumesRange, false)
 
-		lowestChapter = singleChapter
-		highestChapter = singleChapter
-	} else if nums := strings.Split(chaptersRange, "-"); len(nums) == 2 {
-		lowest, err := strconv.Atoi(nums[0])
-		if err != nil {
-			e.Println("Malformated chapters format")
-			os.Exit(0)
-		}
-
-		highest, err := strconv.Atoi(nums[1])
-		if err != nil {
-			e.Println("Malformated chapters format")
-			os.Exit(0)
-		}
-
-		if lowest >= highest {
-			e.Println("Malformated chapters format")
-			os.Exit(0)
-		}
-
-		lowestChapter = lowest
-		highestChapter = highest
-
-	} else {
-		e.Println("Malformated chapters format")
-		os.Exit(0)
-	}
+	lowestVolume, highestVolume = parseRange(volumesRange, true)
 
 }
 
+func parseRange(rangeStr string, isVolume bool) (low, high int) {
+	single, err := strconv.Atoi(rangeStr)
+	formatType := "chapters"
+	if isVolume {
+		formatType = "volumes"
+	}
+	errorMsg := fmt.Sprintf("Malformatted %s format.", formatType)
+	if err == nil {
+		if single < 0 {
+			e.Println(errorMsg)
+			os.Exit(0)
+		}
+
+		if isVolume && single == 0 {
+			e.Println("Please enter a volume number or range.")
+			os.Exit(0)
+		}
+		return single, single
+	}
+
+	nums := strings.Split(rangeStr, "-")
+	if len(nums) != 2 {
+		e.Println(errorMsg)
+		os.Exit(0)
+	}
+
+	lowest, err := strconv.Atoi(nums[0])
+	if err != nil {
+		e.Println(errorMsg)
+		os.Exit(0)
+	}
+	highest, err := strconv.Atoi(nums[1])
+	if err != nil {
+		e.Println(errorMsg)
+		os.Exit(0)
+	}
+
+	if lowest >= highest {
+		e.Println(errorMsg)
+		os.Exit(0)
+	}
+
+	return lowest, highest
+}
+
 func downloadManga(cmd *cobra.Command, args []string) {
-	params := mdx.NewDownloadParam(chaptersRange, lowestChapter, highestChapter, language,
+	params := mdx.NewDownloadParam(chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume, language,
 		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters)
 	if isInteractiveMode {
 		params.RunInteractiveDownload()
