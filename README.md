@@ -270,7 +270,7 @@ Because your query should be more than 5 characters to avoid errors.
     - [X] `all` - download all chapters.
     - [X] `volume` - download all chapters of specified volume.
     - [X] `volume-range` - download all chapters of specified volume range.
-    - [ ] `volume-bundle` - download all chapters of volume into one file.
+    - [X] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `oneshot` - download all oneshots of manga (if available).
 - [X] Add interactive mode for `download` subcommand.
 - [ ] Add self update mechanism.
