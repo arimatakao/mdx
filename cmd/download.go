@@ -20,21 +20,21 @@ var (
 		PreRun:  checkDownloadArgs,
 		Run:     downloadManga,
 	}
-	isJpgFileFormat bool
-	outputDir       string
-	language        string
-	translateGroup  string
-	volumesRange    string
-	chaptersRange   string
-	lowestChapter   int
-	highestChapter  int
-	lowestVolume    int
-	highestVolume   int
-	isMergeChapters bool
-	outputExt       string
-	isLastChapter   bool
-	isAllChapters   bool
-
+	isJpgFileFormat   bool
+	outputDir         string
+	language          string
+	translateGroup    string
+	volumesRange      string
+	chaptersRange     string
+	lowestChapter     int
+	highestChapter    int
+	lowestVolume      int
+	highestVolume     int
+	isMergeChapters   bool
+	outputExt         string
+	isLastChapter     bool
+	isAllChapters     bool
+	isVolume          bool
 	isInteractiveMode bool
 )
 
@@ -171,7 +171,7 @@ func parseRange(rangeStr string, isVolume bool) (low, high int) {
 
 func downloadManga(cmd *cobra.Command, args []string) {
 	params := mdx.NewDownloadParam(chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume, language,
-		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters)
+		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters, isVolume)
 	if isInteractiveMode {
 		params.RunInteractiveDownload()
 	} else if mangaChapterId != "" {
