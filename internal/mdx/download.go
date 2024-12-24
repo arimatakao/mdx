@@ -79,7 +79,11 @@ func (p dlParam) printDlInteractiveParams() {
 	if p.isMerge {
 		isMerging = "yes"
 	}
-	dp.Println(field.Sprint("Merging chapters: "), isMerging)
+	if p.isVolume {
+		dp.Println(field.Sprint("Merging volumes: "), isMerging)
+	} else {
+		dp.Println(field.Sprint("Merging chapters: "), isMerging)
+	}
 }
 
 func (p dlParam) getMangaInfo(mangaId string) (mangadexapi.MangaInfo, error) {
@@ -113,8 +117,8 @@ func (p dlParam) downloadMergeVolumes() {
 				}
 			}
 		}
-		startChapter := maxChapter(volumeChaptersRange)
-		endChapter := minChapter(volumeChaptersRange)
+		startChapter := minChapter(volumeChaptersRange)
+		endChapter := maxChapter(volumeChaptersRange)
 		chaptersRange := startChapter + "-" + endChapter
 		filename := fmt.Sprintf("[%s] %s | vol. %s | ch. %s",
 			p.language, p.mangaInfo.Title("en"), volumeId, chaptersRange)
