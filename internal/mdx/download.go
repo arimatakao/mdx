@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -16,7 +17,8 @@ import (
 )
 
 var (
-	ErrEmptyChapters = errors.New("empty chapters")
+	ErrEmptyChapters         = errors.New("empty chapters")
+	selectedVolumeChapterMap map[string][]mangadexapi.Chapter
 )
 
 type dlParam struct {
@@ -24,48 +26,64 @@ type dlParam struct {
 	chapters       []mangadexapi.ChapterFullInfo
 	lowestChapter  int
 	highestChapter int
+	lowestVolume   int
+	highestVolume  int
 	chaptersRange  string
+	volumesRange   string
 	language       string
 	translateGroup string
 	outputDir      string
 	outputExt      string
 	isJpg          bool
 	isMerge        bool
+	isVolume       bool
 }
 
-func NewDownloadParam(chaptersRange string, lowestChapter, highestChapter int,
-	language, translateGroup, outputDir, outputExt string, isJpg, isMerge bool) dlParam {
+func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter, lowestVolume, highestVolume int,
+	language, translateGroup, outputDir, outputExt string, isJpg, isMerge, isVolume bool) dlParam {
 
 	return dlParam{
 		mangaInfo:      mangadexapi.MangaInfo{},
 		chapters:       []mangadexapi.ChapterFullInfo{},
 		lowestChapter:  lowestChapter,
 		highestChapter: highestChapter,
+		lowestVolume:   lowestVolume,
+		highestVolume:  highestVolume,
 		chaptersRange:  chaptersRange,
+		volumesRange:   volumesRange,
 		language:       language,
 		translateGroup: translateGroup,
 		outputDir:      outputDir,
 		outputExt:      outputExt,
 		isJpg:          isJpg,
 		isMerge:        isMerge,
+		isVolume:       isVolume,
 	}
 }
 
 func (p dlParam) printDlInteractiveParams() {
 	printMangaInfo(p.mangaInfo)
 	field.Println("---")
-	dlChapterList := ""
+	dlChapterList, dlVolumeList := "", ""
 	for _, c := range p.chapters {
 		dlChapterList += " " + c.Number()
+		if !strings.Contains(dlVolumeList, c.Volume()) {
+			dlVolumeList += " " + c.Volume()
+		}
 	}
 	dp.Println(field.Sprint("Chapters:"), dlChapterList)
+	dp.Println(field.Sprint("Volumes:"), dlVolumeList)
 	dp.Println(field.Sprint("Output directory: "), p.outputDir)
 	dp.Println(field.Sprint("Fileformat: "), p.outputExt)
 	isMerging := "no"
 	if p.isMerge {
 		isMerging = "yes"
 	}
-	dp.Println(field.Sprint("Merging chapters: "), isMerging)
+	if p.isVolume {
+		dp.Println(field.Sprint("Merging volumes: "), isMerging)
+	} else {
+		dp.Println(field.Sprint("Merging chapters: "), isMerging)
+	}
 }
 
 func (p dlParam) getMangaInfo(mangaId string) (mangadexapi.MangaInfo, error) {
@@ -74,6 +92,43 @@ func (p dlParam) getMangaInfo(mangaId string) (mangadexapi.MangaInfo, error) {
 		return mangadexapi.MangaInfo{}, err
 	}
 	return resp.MangaInfo(), nil
+}
+
+func (p dlParam) downloadMergeVolumes() {
+	for volumeId, volume := range selectedVolumeChapterMap {
+		containerFile, err := filekit.NewContainer(p.outputExt)
+		if err != nil {
+			e.Printf("While creating output file: %v\n", err)
+			os.Exit(1)
+		}
+
+		volumeChaptersRange := []string{}
+		for _, chapter := range volume {
+			for _, chapterFullInfo := range p.chapters {
+				if chapterFullInfo.Info.ID == chapter.ID && !contains(volumeChaptersRange, chapterFullInfo.Info.Number()) {
+					volumeChaptersRange = append(volumeChaptersRange, chapterFullInfo.Info.Number())
+					volumeId = chapterFullInfo.Volume()
+					err = p.downloadProcess(containerFile, chapterFullInfo)
+					if err != nil {
+						e.Printf("While downloading chapter: %v\n", err)
+						os.Exit(1)
+					}
+					break
+				}
+			}
+		}
+		startChapter := minChapter(volumeChaptersRange)
+		endChapter := maxChapter(volumeChaptersRange)
+		chaptersRange := startChapter + "-" + endChapter
+		filename := fmt.Sprintf("[%s] %s | vol. %s | ch. %s",
+			p.language, p.mangaInfo.Title("en"), volumeId, chaptersRange)
+		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, p.chapters[0])
+		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
+		if err != nil {
+			e.Printf("While saving %s on disk: %v\n", filename, err)
+			os.Exit(1)
+		}
+	}
 }
 
 func (p dlParam) downloadMergeChapters() {
@@ -191,6 +246,82 @@ func (p dlParam) downloadProcess(outputFile filekit.Container,
 	}
 	dp.Println("")
 	return nil
+}
+
+func (p dlParam) DownloadVolumes(mangaId string) {
+	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
+	mangaInfo, err := p.getMangaInfo(mangaId)
+	if err != nil {
+		spinnerMangaInfo.Fail("Failed to get manga info")
+		os.Exit(1)
+	}
+	spinnerMangaInfo.Success("Fetched manga info")
+	p.mangaInfo = mangaInfo
+	spinnerVolChapInfo, _ := pterm.DefaultSpinner.Start("Fetching volume and chapter info...")
+	selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
+	foundChapters := []mangadexapi.Chapter{}
+	for offset := 0; ; offset += 50 {
+		clearOutput()
+		chapterlist, err := client.GetChaptersList(96, offset, mangaId, p.language)
+		if err != nil {
+			spinnerVolChapInfo.Fail("Failed to get volume info")
+			os.Exit(1)
+		}
+
+		if len(chapterlist.Data) == 0 {
+			break
+		}
+
+		foundChapters = append(foundChapters, chapterlist.Data...)
+	}
+
+	if len(foundChapters) == 0 {
+		spinnerVolChapInfo.Fail("Volume not found, try another language or translation group")
+		return
+	}
+	spinnerVolChapInfo.Success("Fetched volume info")
+	spinnerVolInfo, _ := pterm.DefaultSpinner.Start("Creating volume and chapter map...")
+	for _, chapter := range foundChapters {
+		volume := chapter.Volume()
+		// convert volume to int
+		volumeInt, err := strconv.Atoi(volume)
+		if err != nil {
+			spinnerVolInfo.Fail("Failed to convert volume to int")
+			os.Exit(1)
+		}
+		if volumeInt >= p.lowestVolume && volumeInt <= p.highestVolume {
+			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter)
+		}
+	}
+	spinnerVolInfo.Success("Created volume and chapter map")
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
+	chaptersFullInfo := []mangadexapi.ChapterFullInfo{}
+	for _, volume := range selectedVolumeChapterMap {
+		for _, chapter := range volume {
+			chapterFullInfo := mangadexapi.ChapterFullInfo{}
+			chapterFullInfo.Info = chapter
+
+			imageInfo, err := client.GetChapterImageList(chapter.ID)
+			if err != nil {
+				spinnerChapInfo.Fail("Failed to get chapter info")
+				os.Exit(1)
+			}
+			chapterFullInfo.DownloadBaseURL = imageInfo.BaseURL
+			chapterFullInfo.HashId = imageInfo.ChapterMetaInfo.Hash
+			chapterFullInfo.PngFiles = imageInfo.ChapterMetaInfo.Data
+			chapterFullInfo.JpgFiles = imageInfo.ChapterMetaInfo.DataSaver
+
+			chaptersFullInfo = append(chaptersFullInfo, chapterFullInfo)
+		}
+	}
+	spinnerChapInfo.Success("Fetched chapter info")
+	p.chapters = chaptersFullInfo
+	printShortMangaInfo(mangaInfo)
+	if p.isMerge {
+		p.downloadMergeVolumes()
+	} else {
+		p.downloadChapters()
+	}
 }
 
 func (p dlParam) DownloadSpecificChapter(chapterId string) {
@@ -358,17 +489,19 @@ func getChapterNumsFromOptions(options []string) []string {
 	return i
 }
 
-func toSavingOptions() []string {
+func toSavingOptions(isVolume bool) []string {
 	options := []string{}
 	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 1, filekit.CBZ_EXT))
 	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 2, filekit.PDF_EXT))
 	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 3, filekit.EPUB_EXT))
-	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 4,
-		filekit.CBZ_EXT+" + merge chapters in one file"))
-	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 5,
-		filekit.PDF_EXT+" + merge chapters in one file"))
-	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 6,
-		filekit.EPUB_EXT+" + merge chapters in one file"))
+	if !isVolume {
+		options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 4,
+			filekit.CBZ_EXT+" + merge chapters in one file"))
+		options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 5,
+			filekit.PDF_EXT+" + merge chapters in one file"))
+		options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 6,
+			filekit.EPUB_EXT+" + merge chapters in one file"))
+	}
 	return options
 }
 
@@ -403,6 +536,7 @@ func getSavingOption(option string) (string, bool) {
 
 func (p dlParam) RunInteractiveDownload() {
 	cols, rows := getTerminalSize()
+	p.isVolume = false
 
 	foundManga := []string{}
 	associationMangaIdNums := make(map[string]string)
@@ -485,33 +619,127 @@ func (p dlParam) RunInteractiveDownload() {
 	}
 
 	if len(foundChapters) == 0 {
-		e.Println("Chapters not found, try another language or translation group")
+		e.Println("Chapters and/or volumes not found, try another language or translation group")
 		return
 	}
 
-	associationChapterIdNums := make(map[string]string)
-	selectedChapterNums := []string{}
-	for isSelected := false; !isSelected; {
-		clearOutput()
-		printChapterOptions, associationIdNums := toChaptersOptions(foundChapters, cols)
-		selectedChapters, _ := pterm.DefaultInteractiveMultiselect.
-			WithOptions(printChapterOptions).
-			WithMaxHeight(rows - 3).Show("Select chapters from list")
+	downloadOption, _ := pterm.DefaultInteractiveSelect.
+		WithOptions([]string{"Download by Volume", "Download by Chapter"}).
+		WithMaxHeight(rows - 2).Show("Select download option")
 
-		if len(selectedChapters) == 0 {
-			isContinue, _ := pterm.DefaultInteractiveConfirm.
-				Show("Chapters not selected, try again?")
-			if !isContinue {
-				return
+	selectedChapterNums := []string{}
+	associationChapterIdNums := make(map[string]string)
+
+	if downloadOption == "Download by Volume" {
+		p.isVolume = true
+		volumeChapterMap := make(map[string][]mangadexapi.Chapter)
+		for _, chapter := range foundChapters {
+			volume := chapter.Volume()
+			volumeChapterMap[volume] = append(volumeChapterMap[volume], chapter)
+		}
+
+		selectedVolumes := []string{}
+		for isSelected := false; !isSelected; {
+			clearOutput()
+
+			// Prepare options with volume and chapter range
+			printVolumeOptions := []string{}
+			volumes := make([]int, 0, len(volumeChapterMap))
+			for volume := range volumeChapterMap {
+				vol, _ := strconv.Atoi(volume)
+				volumes = append(volumes, vol)
+			}
+			sort.Ints(volumes)
+
+			for _, vol := range volumes {
+				volume := strconv.Itoa(vol)
+				chapters := volumeChapterMap[volume]
+				if len(chapters) > 0 {
+					startChapter := chapters[0].Number()
+					endChapter := chapters[len(chapters)-1].Number()
+					option := fmt.Sprintf(
+						"%s | Volume %s | Chapters %s-%s",
+						p.mangaInfo.Title("en"), volume, startChapter, endChapter,
+					)
+					printVolumeOptions = append(printVolumeOptions, option)
+				}
+			}
+
+			selectedVolumes, _ = pterm.DefaultInteractiveMultiselect.
+				WithOptions(printVolumeOptions).
+				WithMaxHeight(rows - 3).Show("Select volumes from list")
+
+			if len(selectedVolumes) == 0 {
+				isContinue, _ := pterm.DefaultInteractiveConfirm.
+					Show("Volumes not selected, try again?")
+				if !isContinue {
+					return
+				}
+			}
+
+			isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct volumes?")
+			if isSelected {
+				selectedVolumeNumbers := []int{}
+				// Build the actual "UI index -> chapter ID" map (just like we do for chapters)
+				// We'll keep track of a "virtual" selection index (i) for each chapter found inside each volume.
+				i := 1
+				selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
+				for _, selectedVolume := range selectedVolumes {
+					// Extract volume number from "xxx | Volume NN |..."
+					volumeStr := strings.TrimSpace(strings.Split(selectedVolume, "|")[1][7:])
+					volumeNum, _ := strconv.Atoi(volumeStr)
+					selectedVolumeNumbers = append(selectedVolumeNumbers, volumeNum)
+					selectedVolumeChapterMap[volumeStr] = volumeChapterMap[volumeStr]
+					// For each chapter in that volume
+					for _, ch := range volumeChapterMap[volumeStr] {
+						// We store "i -> chapter.ID" into associationChapterIdNums
+						idx := strconv.Itoa(i)
+						associationChapterIdNums[idx] = ch.ID
+						selectedChapterNums = append(selectedChapterNums, idx)
+						i++
+					}
+				}
+				sort.Ints(selectedVolumeNumbers)
+				p.lowestVolume = selectedVolumeNumbers[0]
+				p.highestVolume = selectedVolumeNumbers[len(selectedVolumeNumbers)-1]
+				p.volumesRange = strconv.Itoa(p.lowestVolume) + "-" + strconv.Itoa(p.highestVolume)
 			}
 		}
+	} else {
+		for isSelected := false; !isSelected; {
+			clearOutput()
+			printChapterOptions, associationIdNums := toChaptersOptions(foundChapters, cols)
+			selectedChapters, _ := pterm.DefaultInteractiveMultiselect.
+				WithOptions(printChapterOptions).
+				WithMaxHeight(rows - 3).Show("Select chapters from list")
 
-		isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct chapters?")
-		if isSelected {
-			selectedChapterNums = append(selectedChapterNums,
-				getChapterNumsFromOptions(selectedChapters)...)
-			maps.Copy(associationChapterIdNums, associationIdNums)
+			if len(selectedChapters) == 0 {
+				isContinue, _ := pterm.DefaultInteractiveConfirm.
+					Show("Chapters not selected, try again?")
+				if !isContinue {
+					return
+				}
+			}
+
+			isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct chapters?")
+			if isSelected {
+				selectedChapterNums = append(selectedChapterNums, getChapterNumsFromOptions(selectedChapters)...)
+				maps.Copy(associationChapterIdNums, associationIdNums)
+			}
 		}
+	}
+	clearOutput()
+
+	savingOption, _ := pterm.DefaultInteractiveSelect.
+		WithOptions(toSavingOptions(p.isVolume)).
+		WithMaxHeight(rows - 2).
+		Show("Select saving options")
+
+	outputExt, isMerge := getSavingOption(savingOption)
+	p.outputExt = outputExt
+	p.isMerge = isMerge
+	if p.isVolume {
+		p.isMerge = true
 	}
 
 	clearOutput()
@@ -538,15 +766,6 @@ func (p dlParam) RunInteractiveDownload() {
 	}
 	p.chapters = chaptersFullInfo
 
-	savingOption, _ := pterm.DefaultInteractiveSelect.
-		WithOptions(toSavingOptions()).
-		WithMaxHeight(rows - 2).
-		Show("Select saving options")
-
-	outputExt, isMerge := getSavingOption(savingOption)
-	p.outputExt = outputExt
-	p.isMerge = isMerge
-
 	clearOutput()
 	outputDir, _ := pterm.DefaultInteractiveTextInput.
 		WithTextStyle(field).
@@ -566,10 +785,47 @@ func (p dlParam) RunInteractiveDownload() {
 		return
 	}
 
-	field.Println("Downloading chapters...")
-	if p.isMerge {
+	field.Println("Downloading selections...")
+	if p.isMerge && p.isVolume {
+		p.downloadMergeVolumes()
+	} else if p.isMerge {
 		p.downloadMergeChapters()
 	} else {
 		p.downloadChapters()
 	}
+}
+
+func maxChapter(chapters []string) string {
+	if len(chapters) == 0 {
+		return ""
+	}
+	max := chapters[0]
+	for _, ch := range chapters {
+		if ch > max {
+			max = ch
+		}
+	}
+	return max
+}
+
+func minChapter(chapters []string) string {
+	if len(chapters) == 0 {
+		return ""
+	}
+	min := chapters[0]
+	for _, ch := range chapters {
+		if ch < min {
+			min = ch
+		}
+	}
+	return min
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }

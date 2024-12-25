@@ -268,9 +268,9 @@ Because your query should be more than 5 characters to avoid errors.
         - [X] pdf (include metadata).
         - [X] epub (include metadata).
     - [X] `all` - download all chapters.
-    - [ ] `volume` - download all chapters of specified volume.
-    - [ ] `volume-range` - download all chapters of specified volume range.
-    - [ ] `volume-bundle` - download all chapters of volume into one file.
+    - [X] `volume` - download all chapters of specified volume.
+    - [X] `volume-range` - download all chapters of specified volume range.
+    - [X] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `oneshot` - download all oneshots of manga (if available).
 - [X] Add interactive mode for `download` subcommand.
 - [ ] Add self update mechanism.
@@ -282,7 +282,7 @@ Because your query should be more than 5 characters to avoid errors.
 
 - [X] Use `pterm` output instead `fmt`.
 - [X] Refactor `cmd` package.
-- [ ] Add rate limiter for client api.
+- [X] Add rate limiter for client api.
 - [ ] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `internal/mdx` package.
