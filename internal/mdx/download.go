@@ -122,7 +122,7 @@ func (p dlParam) downloadMergeVolumes() {
 		chaptersRange := startChapter + "-" + endChapter
 		filename := fmt.Sprintf("[%s] %s | vol. %s | ch. %s",
 			p.language, p.mangaInfo.Title("en"), volumeId, chaptersRange)
-		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, p.chapters[0])
+		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, selectedVolumeChapterMap[volumeId][0])
 		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
 		if err != nil {
 			e.Printf("While saving %s on disk: %v\n", filename, err)
@@ -256,12 +256,12 @@ func (p dlParam) DownloadVolumes(mangaId string) {
 		os.Exit(1)
 	}
 	spinnerMangaInfo.Success("Fetched manga info")
+	printShortMangaInfo(mangaInfo)
 	p.mangaInfo = mangaInfo
 	spinnerVolChapInfo, _ := pterm.DefaultSpinner.Start("Fetching volume and chapter info...")
 	selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
 	foundChapters := []mangadexapi.Chapter{}
 	for offset := 0; ; offset += 50 {
-		clearOutput()
 		chapterlist, err := client.GetChaptersList(96, offset, mangaId, p.language)
 		if err != nil {
 			spinnerVolChapInfo.Fail("Failed to get volume info")
@@ -316,7 +316,6 @@ func (p dlParam) DownloadVolumes(mangaId string) {
 	}
 	spinnerChapInfo.Success("Fetched chapter info")
 	p.chapters = chaptersFullInfo
-	printShortMangaInfo(mangaInfo)
 	if p.isMerge {
 		p.downloadMergeVolumes()
 	} else {
