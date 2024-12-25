@@ -172,7 +172,6 @@ func parseRange(rangeStr string, isVolume bool) (low, high int) {
 func downloadManga(cmd *cobra.Command, args []string) {
 	params := mdx.NewDownloadParam(chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume, language,
 		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters, isVolume)
-	// TODO: add function to download volumes
 	if isInteractiveMode {
 		params.RunInteractiveDownload()
 	} else if mangaChapterId != "" {

@@ -258,7 +258,7 @@ func (p dlParam) DownloadVolumes(mangaId string) {
 	spinnerMangaInfo.Success("Fetched manga info")
 	p.mangaInfo = mangaInfo
 	spinnerVolChapInfo, _ := pterm.DefaultSpinner.Start("Fetching volume and chapter info...")
-	volumeChapterMap := make(map[string][]mangadexapi.Chapter)
+	selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
 	foundChapters := []mangadexapi.Chapter{}
 	for offset := 0; ; offset += 50 {
 		clearOutput()
@@ -290,13 +290,13 @@ func (p dlParam) DownloadVolumes(mangaId string) {
 			os.Exit(1)
 		}
 		if volumeInt >= p.lowestVolume && volumeInt <= p.highestVolume {
-			volumeChapterMap[volume] = append(volumeChapterMap[volume], chapter)
+			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter)
 		}
 	}
 	spinnerVolInfo.Success("Created volume and chapter map")
 	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
 	chaptersFullInfo := []mangadexapi.ChapterFullInfo{}
-	for _, volume := range volumeChapterMap {
+	for _, volume := range selectedVolumeChapterMap {
 		for _, chapter := range volume {
 			chapterFullInfo := mangadexapi.ChapterFullInfo{}
 			chapterFullInfo.Info = chapter
@@ -317,8 +317,11 @@ func (p dlParam) DownloadVolumes(mangaId string) {
 	spinnerChapInfo.Success("Fetched chapter info")
 	p.chapters = chaptersFullInfo
 	printShortMangaInfo(mangaInfo)
-	p.downloadChapters()
-
+	if p.isMerge {
+		p.downloadMergeVolumes()
+	} else {
+		p.downloadChapters()
+	}
 }
 
 func (p dlParam) DownloadSpecificChapter(chapterId string) {
