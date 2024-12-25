@@ -54,7 +54,7 @@ func init() {
 	downloadCmd.Flags().StringVarP(&translateGroup,
 		"translated-by", "t", "", "specify a part of the translation group's name")
 	downloadCmd.Flags().StringVarP(&chaptersRange,
-		"chapter", "c", "1", "specify chapters")
+		"chapter", "c", "0", "specify chapters")
 	downloadCmd.Flags().StringVarP(&volumesRange,
 		"volume", "v", "0", "specify volumes")
 	downloadCmd.Flags().BoolVarP(&isAllChapters,
@@ -172,10 +172,13 @@ func parseRange(rangeStr string, isVolume bool) (low, high int) {
 func downloadManga(cmd *cobra.Command, args []string) {
 	params := mdx.NewDownloadParam(chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume, language,
 		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters, isVolume)
+	// TODO: add function to download volumes
 	if isInteractiveMode {
 		params.RunInteractiveDownload()
 	} else if mangaChapterId != "" {
 		params.DownloadSpecificChapter(mangaChapterId)
+	} else if highestVolume != 0 && lowestVolume != 0 {
+		params.DownloadVolumes(mangaId)
 	} else if isLastChapter {
 		params.DownloadLastChapter(mangaId)
 	} else if isAllChapters {

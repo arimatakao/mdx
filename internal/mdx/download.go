@@ -248,6 +248,79 @@ func (p dlParam) downloadProcess(outputFile filekit.Container,
 	return nil
 }
 
+func (p dlParam) DownloadVolumes(mangaId string) {
+	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
+	mangaInfo, err := p.getMangaInfo(mangaId)
+	if err != nil {
+		spinnerMangaInfo.Fail("Failed to get manga info")
+		os.Exit(1)
+	}
+	spinnerMangaInfo.Success("Fetched manga info")
+	p.mangaInfo = mangaInfo
+	spinnerVolChapInfo, _ := pterm.DefaultSpinner.Start("Fetching volume and chapter info...")
+	volumeChapterMap := make(map[string][]mangadexapi.Chapter)
+	foundChapters := []mangadexapi.Chapter{}
+	for offset := 0; ; offset += 50 {
+		clearOutput()
+		chapterlist, err := client.GetChaptersList(96, offset, mangaId, p.language)
+		if err != nil {
+			spinnerVolChapInfo.Fail("Failed to get volume info")
+			os.Exit(1)
+		}
+
+		if len(chapterlist.Data) == 0 {
+			break
+		}
+
+		foundChapters = append(foundChapters, chapterlist.Data...)
+	}
+
+	if len(foundChapters) == 0 {
+		spinnerVolChapInfo.Fail("Volume not found, try another language or translation group")
+		return
+	}
+	spinnerVolChapInfo.Success("Fetched volume info")
+	spinnerVolInfo, _ := pterm.DefaultSpinner.Start("Creating volume and chapter map...")
+	for _, chapter := range foundChapters {
+		volume := chapter.Volume()
+		// convert volume to int
+		volumeInt, err := strconv.Atoi(volume)
+		if err != nil {
+			spinnerVolInfo.Fail("Failed to convert volume to int")
+			os.Exit(1)
+		}
+		if volumeInt >= p.lowestVolume && volumeInt <= p.highestVolume {
+			volumeChapterMap[volume] = append(volumeChapterMap[volume], chapter)
+		}
+	}
+	spinnerVolInfo.Success("Created volume and chapter map")
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
+	chaptersFullInfo := []mangadexapi.ChapterFullInfo{}
+	for _, volume := range volumeChapterMap {
+		for _, chapter := range volume {
+			chapterFullInfo := mangadexapi.ChapterFullInfo{}
+			chapterFullInfo.Info = chapter
+
+			imageInfo, err := client.GetChapterImageList(chapter.ID)
+			if err != nil {
+				spinnerChapInfo.Fail("Failed to get chapter info")
+				os.Exit(1)
+			}
+			chapterFullInfo.DownloadBaseURL = imageInfo.BaseURL
+			chapterFullInfo.HashId = imageInfo.ChapterMetaInfo.Hash
+			chapterFullInfo.PngFiles = imageInfo.ChapterMetaInfo.Data
+			chapterFullInfo.JpgFiles = imageInfo.ChapterMetaInfo.DataSaver
+
+			chaptersFullInfo = append(chaptersFullInfo, chapterFullInfo)
+		}
+	}
+	spinnerChapInfo.Success("Fetched chapter info")
+	p.chapters = chaptersFullInfo
+	printShortMangaInfo(mangaInfo)
+	p.downloadChapters()
+
+}
+
 func (p dlParam) DownloadSpecificChapter(chapterId string) {
 	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
 	resp, err := client.GetChapterInfo(chapterId)
