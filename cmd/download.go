@@ -118,7 +118,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	lowestChapter, highestChapter = parseRange(volumesRange, false)
+	lowestChapter, highestChapter = parseRange(chaptersRange, false)
 
 	lowestVolume, highestVolume = parseRange(volumesRange, true)
 
