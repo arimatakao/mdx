@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/arimatakao/mdx/filekit"
 	"github.com/arimatakao/mdx/internal/mdx"
 	"github.com/arimatakao/mdx/mangadexapi"
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -130,7 +130,7 @@ func parseRange(rangeStr string, isVolume bool) (low, high int) {
 	if isVolume {
 		formatType = "volumes"
 	}
-	errorMsg := fmt.Sprintf("Malformatted %s format.", formatType)
+	errorMsg := pterm.Sprintf("Malformatted %s format.", formatType)
 	if err == nil {
 		if single < 0 {
 			e.Println(errorMsg)

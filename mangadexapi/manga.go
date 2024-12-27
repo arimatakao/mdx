@@ -1,10 +1,11 @@
 package mangadexapi
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/pterm/pterm"
 )
 
 type MangaTag struct {
@@ -70,7 +71,7 @@ func (mi MangaInfo) AltTitles() string {
 	altTitles := []string{}
 	for _, m := range mi.Attributes.AltTitles {
 		for language, title := range m {
-			altTitles = append(altTitles, fmt.Sprintf("%s (%s)", title, language))
+			altTitles = append(altTitles, pterm.Sprintf("%s (%s)", title, language))
 		}
 	}
 	return strings.Join(altTitles, " , ")
