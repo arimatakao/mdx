@@ -410,7 +410,7 @@ func (p dlParam) DownloadChapters(mangaId string) {
 	}
 }
 
-func (p dlParam) DownloadAllChapters(mangaId string) {
+func (p dlParam) DownloadAllChapters(mangaId string, isVolume bool) {
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
 	mangaInfo, err := p.getMangaInfo(mangaId)
 	if err != nil {
@@ -435,7 +435,16 @@ func (p dlParam) DownloadAllChapters(mangaId string) {
 	}
 
 	printShortMangaInfo(mangaInfo)
-	if p.isMerge {
+
+	if isVolume {
+		// Create volume mapping for all chapters
+		selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
+		for _, chapter := range p.chapters {
+			volume := chapter.Volume()
+			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter.Info)
+		}
+		p.downloadMergeVolumes()
+	} else if p.isMerge {
 		p.downloadMergeChapters()
 	} else {
 		p.downloadChapters()

@@ -62,7 +62,7 @@ func init() {
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
 		"jpg", "j", false, "download compressed images for small output file size")
 	downloadCmd.Flags().BoolVarP(&isMergeChapters,
-		"merge", "m", false, "merge downloaded chapters into one file")
+		"merge", "m", false, "merge downloaded chapters into one file. If used with `--volume` or `-v,` it will merge the chapters into their volumes")
 	downloadCmd.Flags().BoolVarP(&isLastChapter,
 		"last", "", false, "download last chapter")
 	downloadCmd.Flags().BoolVarP(&isInteractiveMode,
@@ -74,6 +74,8 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	if isInteractiveMode {
 		return
 	}
+
+	isVolume = cmd.Flags().Changed("volume")
 
 	if len(args) == 0 && mangaUrl == "" && mangaChapterUrl == "" {
 		cmd.Help()
@@ -118,10 +120,10 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	lowestChapter, highestChapter = parseRange(chaptersRange, false)
-
-	lowestVolume, highestVolume = parseRange(volumesRange, true)
-
+	if !isAllChapters {
+		lowestChapter, highestChapter = parseRange(chaptersRange, false)
+		lowestVolume, highestVolume = parseRange(volumesRange, true)
+	}
 }
 
 func parseRange(rangeStr string, isVolume bool) (low, high int) {
@@ -181,7 +183,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	} else if isLastChapter {
 		params.DownloadLastChapter(mangaId)
 	} else if isAllChapters {
-		params.DownloadAllChapters(mangaId)
+		params.DownloadAllChapters(mangaId, isVolume)
 	} else {
 		params.DownloadChapters(mangaId)
 	}
