@@ -450,7 +450,7 @@ func (p dlParam) DownloadAllChapters(mangaId string, isVolume bool) {
 	}
 }
 
-const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                            // numnber | authors | title
+const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                            // number | authors | title
 const OPTION_CHAPTER_TEMPLATE = "%d | Volume_%s | Chapter_%s | %s | %s" // number | volume | chapter | chapter title | translator
 const OPTION_SAVING_TEMPLATE = "%d | %s"
 
