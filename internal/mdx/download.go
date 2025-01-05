@@ -285,8 +285,7 @@ func (p dlParam) DownloadVolumes(mangaId string) {
 		// convert volume to int
 		volumeInt, err := strconv.Atoi(volume)
 		if err != nil {
-			spinnerVolInfo.Fail("Failed to convert volume to int")
-			os.Exit(1)
+			continue
 		}
 		if volumeInt >= p.lowestVolume && volumeInt <= p.highestVolume {
 			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter)
