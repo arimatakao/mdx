@@ -10,7 +10,7 @@ var (
 		Use:     "find",
 		Aliases: []string{"f", "search", "list", "ls"},
 		Short:   "Find manga",
-		Long:    "Search and print manga info. Sort by revelance asceding. Best results will be down",
+		Long:    "Search and print manga info. Sort by relevance ascending. Best results will be at the bottom.",
 		Run:     find,
 	}
 	title            string
