@@ -54,7 +54,7 @@ func init() {
 	downloadCmd.Flags().StringVarP(&translateGroup,
 		"translated-by", "t", "", "specify a part of the translation group's name")
 	downloadCmd.Flags().StringVarP(&chaptersRange,
-		"chapter", "c", "0", "specify chapters")
+		"chapter", "c", "1", "specify chapters")
 	downloadCmd.Flags().StringVarP(&volumesRange,
 		"volume", "v", "0", "specify volumes")
 	downloadCmd.Flags().BoolVarP(&isAllChapters,
@@ -74,8 +74,6 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	if isInteractiveMode {
 		return
 	}
-
-	isVolume = cmd.Flags().Changed("volume")
 
 	if len(args) == 0 && mangaUrl == "" && mangaChapterUrl == "" {
 		cmd.Help()
@@ -127,22 +125,19 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 }
 
 func parseRange(rangeStr string, isVolume bool) (low, high int) {
-	single, err := strconv.Atoi(rangeStr)
 	formatType := "chapters"
 	if isVolume {
 		formatType = "volumes"
 	}
-	errorMsg := pterm.Sprintf("Malformatted %s format.", formatType)
+	errorMsg := pterm.Sprintf("Malformatted %s range format %s", formatType, rangeStr)
+
+	single, err := strconv.Atoi(rangeStr)
 	if err == nil {
 		if single < 0 {
 			e.Println(errorMsg)
 			os.Exit(0)
 		}
 
-		if isVolume && single == 0 {
-			e.Println("Please enter a volume number or range.")
-			os.Exit(0)
-		}
 		return single, single
 	}
 
