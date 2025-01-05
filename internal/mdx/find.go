@@ -2,7 +2,6 @@ package mdx
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
@@ -49,7 +48,7 @@ func (p findParams) Find() {
 		currentOffset := p.printedCount
 
 		for currentOffset < response.Total {
-			spinner, _ := pterm.DefaultSpinner.Start(fmt.Sprintf("Fetching more results (%d/%d)...", currentOffset, response.Total))
+			spinner, _ := pterm.DefaultSpinner.Start(pterm.Sprintf("Fetching more results (%d/%d)...", currentOffset, response.Total))
 			moreResults, err := client.Find(p.title, p.printedCount, currentOffset, p.isDoujinshiAllow)
 			if err != nil {
 				spinner.Fail("Failed to fetch additional results")
@@ -66,7 +65,7 @@ func (p findParams) Find() {
 			os.Exit(1)
 		}
 		timeStamp := time.Now().Format("20060102")
-		fileName := fmt.Sprintf("Search-Results_%s.json", timeStamp)
+		fileName := pterm.Sprintf("Search-Results_%s.json", timeStamp)
 
 		err = os.WriteFile(fileName, jsonData, 0644)
 		if err != nil {

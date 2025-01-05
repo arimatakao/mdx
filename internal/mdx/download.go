@@ -2,7 +2,6 @@ package mdx
 
 import (
 	"errors"
-	"fmt"
 	"maps"
 	"os"
 	"sort"
@@ -120,7 +119,7 @@ func (p dlParam) downloadMergeVolumes() {
 		startChapter := minChapter(volumeChaptersRange)
 		endChapter := maxChapter(volumeChaptersRange)
 		chaptersRange := startChapter + "-" + endChapter
-		filename := fmt.Sprintf("[%s] %s | vol. %s | ch. %s",
+		filename := pterm.Sprintf("[%s] %s | vol. %s | ch. %s",
 			p.language, p.mangaInfo.Title("en"), volumeId, chaptersRange)
 		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, selectedVolumeChapterMap[volumeId][0])
 		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
@@ -155,10 +154,10 @@ func (p dlParam) downloadMergeChapters() {
 
 	filename := ""
 	if p.chapters[0].Translator() == "" {
-		filename = fmt.Sprintf("[%s] %s ch. %s",
+		filename = pterm.Sprintf("[%s] %s ch. %s",
 			p.language, p.mangaInfo.Title("en"), chaptersRange)
 	} else {
-		filename = fmt.Sprintf("[%s] %s ch. %s | %s",
+		filename = pterm.Sprintf("[%s] %s ch. %s | %s",
 			p.language, p.mangaInfo.Title("en"), chaptersRange, p.chapters[0].Translator())
 	}
 
@@ -188,11 +187,11 @@ func (p dlParam) downloadChapters() {
 
 		filename := ""
 		if chapter.Translator() == "" {
-			filename = fmt.Sprintf("[%s] %s vol. %s ch. %s",
+			filename = pterm.Sprintf("[%s] %s vol. %s ch. %s",
 				p.language, p.mangaInfo.Title("en"), chapter.Volume(),
 				chapter.Number())
 		} else {
-			filename = fmt.Sprintf("[%s] %s vol. %s ch. %s | %s",
+			filename = pterm.Sprintf("[%s] %s vol. %s ch. %s | %s",
 				p.language, p.mangaInfo.Title("en"), chapter.Volume(),
 				chapter.Number(),
 				chapter.Translator())
@@ -411,7 +410,7 @@ func (p dlParam) DownloadChapters(mangaId string) {
 	}
 }
 
-func (p dlParam) DownloadAllChapters(mangaId string) {
+func (p dlParam) DownloadAllChapters(mangaId string, isVolume bool) {
 	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
 	mangaInfo, err := p.getMangaInfo(mangaId)
 	if err != nil {
@@ -436,7 +435,16 @@ func (p dlParam) DownloadAllChapters(mangaId string) {
 	}
 
 	printShortMangaInfo(mangaInfo)
-	if p.isMerge {
+
+	if isVolume {
+		// Create volume mapping for all chapters
+		selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
+		for _, chapter := range p.chapters {
+			volume := chapter.Volume()
+			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter.Info)
+		}
+		p.downloadMergeVolumes()
+	} else if p.isMerge {
 		p.downloadMergeChapters()
 	} else {
 		p.downloadChapters()
@@ -451,7 +459,7 @@ func toMangaInfoOptions(m []mangadexapi.MangaInfo, maxOptionSize int) ([]string,
 	printOptions := []string{}
 	associationNums := make(map[string]string)
 	for i, manga := range m {
-		option := fmt.Sprintf(OPTION_MANGA_TEMPLATE, i+1, manga.Authors(), manga.Title("en"))
+		option := pterm.Sprintf(OPTION_MANGA_TEMPLATE, i+1, manga.Authors(), manga.Title("en"))
 		if len(option)+2 >= maxOptionSize {
 			option = option[:maxOptionSize-2]
 		}
@@ -469,7 +477,7 @@ func toChaptersOptions(c []mangadexapi.Chapter, maxOptionSize int) ([]string, ma
 	options := []string{}
 	associationNums := make(map[string]string)
 	for i, chapter := range c {
-		option := fmt.Sprintf(OPTION_CHAPTER_TEMPLATE,
+		option := pterm.Sprintf(OPTION_CHAPTER_TEMPLATE,
 			i+1, chapter.Volume(), chapter.Number(), chapter.Title())
 		if len(option)+6 >= maxOptionSize {
 			option = option[:maxOptionSize-6]
@@ -490,15 +498,15 @@ func getChapterNumsFromOptions(options []string) []string {
 
 func toSavingOptions(isVolume bool) []string {
 	options := []string{}
-	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 1, filekit.CBZ_EXT))
-	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 2, filekit.PDF_EXT))
-	options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 3, filekit.EPUB_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 1, filekit.CBZ_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 2, filekit.PDF_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 3, filekit.EPUB_EXT))
 	if !isVolume {
-		options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 4,
+		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 4,
 			filekit.CBZ_EXT+" + merge chapters in one file"))
-		options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 5,
+		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 5,
 			filekit.PDF_EXT+" + merge chapters in one file"))
-		options = append(options, fmt.Sprintf(OPTION_SAVING_TEMPLATE, 6,
+		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 6,
 			filekit.EPUB_EXT+" + merge chapters in one file"))
 	}
 	return options
@@ -656,7 +664,7 @@ func (p dlParam) RunInteractiveDownload() {
 				if len(chapters) > 0 {
 					startChapter := chapters[0].Number()
 					endChapter := chapters[len(chapters)-1].Number()
-					option := fmt.Sprintf(
+					option := pterm.Sprintf(
 						"%s | Volume %s | Chapters %s-%s",
 						p.mangaInfo.Title("en"), volume, startChapter, endChapter,
 					)

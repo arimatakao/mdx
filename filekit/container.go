@@ -2,12 +2,12 @@ package filekit
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
+	"github.com/pterm/pterm"
 )
 
 const (
@@ -49,7 +49,7 @@ func safeOutputPath(outputDir, outputFileName, extension string) string {
 			break
 		}
 		outputPath = filepath.Join(outputDir,
-			fmt.Sprintf("%s (%d).%s", outputFileName, count, extension))
+			pterm.Sprintf("%s (%d).%s", outputFileName, count, extension))
 	}
 	return outputPath
 }
