@@ -13,6 +13,25 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 </div>
 
+# Table of Contents
+
+- [mdx 📚](#mdx-)
+- [Features 💫](#features-)
+- [Installation ⚙️](#installation-)
+  - [Using in Nix, NixOS](#using-in-nix-nixos)
+  - [Post-installation steps](#post-installation-steps)
+    - [Windows](#windows)
+    - [Linux](#linux)
+    - [MacOS](#macos)
+- [Usage examples️ 🖥️](#usage-examples-)
+- [FAQ 💬](#faq-)
+- [TODO 📌](#todo-)
+  - [Functionality](#functionality)
+  - [Code](#code)
+- [License 📜](#license-)
+- [Third-party Libraries](#third-party-libraries)
+- [Contributors 🧑‍💻](#contributors-)
+
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux***.
@@ -41,6 +60,8 @@ go install github.com/arimatakao/mdx@latest
 ```
 
 ### Using in Nix, NixOS
+
+**Temporarily not working because the `vendorHash` in `nix/default.nix:33` is not set correctly**
 
 Using flakes to run `mdx` directly:
 ```
@@ -138,8 +159,14 @@ mdx dl https://mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
 # download a range of chapters
 mdx dl -c 1-3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
+# download 1 volume of manga
+mdx dl -v 1 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
 # download a range of chapters and merge them in one file
 mdx dl -m -c 1-3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
+# download 1 volume of manga and merge chapters in one file
+mdx dl -m -v 1 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download last chapter
 mdx dl --last mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
@@ -239,19 +266,11 @@ This problem stems from the uploader failing to specify the correct volume or ch
 
 The size of each page in the PDF corresponds to the size of the image.
 
-#### Getting error "While getting manga chapters: request is failed". I can't download anything. Why?
-
-This issue is related to the MangaDex API (https://api.mangadex.org/docs/2-limitations/#general-rate-limit), mdx is sending too many requests per second. Try downloading chapters later.
-
 #### Getting error "Chapters x-y not found, try another range, language, translation group etc."
 
 Maybe you didn't specify the translation group, chapter range, or language correctly. **Make sure that the chapter can be opened on MangaDex (not on external resource).**
 
 Sometimes it doesn't download because of some problems on the MangaDex side. Just try again later.
-
-#### Getting an error in interactive mode when searching for manga. Why?
-
-Because your query should be more than 5 characters to avoid errors.
 
 ## TODO 📌
 
@@ -304,8 +323,9 @@ This project uses the following third-party libraries:
 - go-epub (https://github.com/go-shiori/go-epub) - Licensed under the MIT
 - consolesize-go (https://github.com/nathan-fiscaletti/consolesize-go) - Licensed under the MIT
 
-## Contributors
+## Contributors 🧑‍💻
 
 - [arimatakao](https://github.com/arimatakao)
 - [wolandark](https://github.com/wolandark)
 - [nikololiahim](https://github.com/nikololiahim)
+- [BelardoA](https://github.com/BelardoA)
