@@ -121,12 +121,18 @@ func (p dlParam) downloadMergeVolumes() {
 		chaptersRange := startChapter + "-" + endChapter
 		filename := pterm.Sprintf("[%s] %s | vol. %s | ch. %s",
 			p.language, p.mangaInfo.Title("en"), volumeId, chaptersRange)
+
+		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
+
 		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, selectedVolumeChapterMap[volumeId][0])
 		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
 		if err != nil {
+
+			spinnerSave.Fail("File not saved")
 			e.Printf("While saving %s on disk: %v\n", filename, err)
 			os.Exit(1)
 		}
+		spinnerSave.Success("Saved " + filename)
 	}
 }
 
@@ -161,12 +167,17 @@ func (p dlParam) downloadMergeChapters() {
 			p.language, p.mangaInfo.Title("en"), chaptersRange, p.chapters[0].Translator())
 	}
 
+	spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
+
 	metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, p.chapters[0])
 	err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, p.chaptersRange)
 	if err != nil {
+		spinnerSave.Fail("File not saved")
 		e.Printf("While saving %s on disk: %v\n", filename, err)
 		os.Exit(1)
 	}
+
+	spinnerSave.Success("Saved " + filename)
 }
 
 func (p dlParam) downloadChapters() {
@@ -196,12 +207,18 @@ func (p dlParam) downloadChapters() {
 				chapter.Number(),
 				chapter.Translator())
 		}
+
+		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
+
 		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, chapter)
 		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
 		if err != nil {
+			spinnerSave.Fail("File not saved")
 			e.Printf("While saving %s on disk: %v\n", filename, err)
 			os.Exit(1)
 		}
+
+		spinnerSave.Success("Saved " + filename)
 	}
 }
 
