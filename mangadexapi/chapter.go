@@ -57,10 +57,10 @@ func (c Chapter) Language() string {
 }
 
 func (c Chapter) isTranslatedByGroup(translateGroup string) bool {
-	return strings.Contains(c.getTranslator(), translateGroup)
+	return strings.Contains(c.GetTranslator(), translateGroup)
 }
 
-func (c Chapter) getTranslator() string {
+func (c Chapter) GetTranslator() string {
 	for _, rel := range c.Relationships {
 		if rel.Type == "scanlation_group" {
 			return rel.Attributes.Name
@@ -204,7 +204,7 @@ func (c ChapterFullInfo) Language() string {
 }
 
 func (c ChapterFullInfo) Translator() string {
-	return c.Info.getTranslator()
+	return c.Info.GetTranslator()
 }
 
 func (c ChapterFullInfo) UploadedBy() string {

@@ -451,8 +451,8 @@ func (p dlParam) DownloadAllChapters(mangaId string, isVolume bool) {
 	}
 }
 
-const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                 // numnber | authors | title
-const OPTION_CHAPTER_TEMPLATE = "%d | vol. %s | ch. %s | %s" // number | volume | chapter | chapter title
+const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                            // numnber | authors | title
+const OPTION_CHAPTER_TEMPLATE = "%d | Volume_%s | Chapter_%s | %s | %s" // number | volume | chapter | chapter title | translator
 const OPTION_SAVING_TEMPLATE = "%d | %s"
 
 func toMangaInfoOptions(m []mangadexapi.MangaInfo, maxOptionSize int) ([]string, map[string]string) {
@@ -478,7 +478,7 @@ func toChaptersOptions(c []mangadexapi.Chapter, maxOptionSize int) ([]string, ma
 	associationNums := make(map[string]string)
 	for i, chapter := range c {
 		option := pterm.Sprintf(OPTION_CHAPTER_TEMPLATE,
-			i+1, chapter.Volume(), chapter.Number(), chapter.Title())
+			i+1, chapter.Volume(), chapter.Number(), chapter.Title(), chapter.GetTranslator())
 		if len(option)+6 >= maxOptionSize {
 			option = option[:maxOptionSize-6]
 		}
@@ -519,7 +519,7 @@ func getSavingOption(option string) (string, bool) {
 	}
 	num, err := strconv.Atoi(parts[0])
 	if err != nil {
-		dp.Printfln("er %v", err)
+		dp.Printfln("error while create saving options: %v", err)
 		return "", false
 	}
 	dp.Println(num)

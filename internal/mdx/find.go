@@ -48,11 +48,14 @@ func (p findParams) Find() {
 		currentOffset := p.printedCount
 
 		for currentOffset < response.Total {
-			spinner, _ := pterm.DefaultSpinner.Start(pterm.Sprintf("Fetching more results (%d/%d)...", currentOffset, response.Total))
-			moreResults, err := client.Find(p.title, p.printedCount, currentOffset, p.isDoujinshiAllow)
+			spinner, _ := pterm.DefaultSpinner.Start(
+				pterm.Sprintf("Fetching more results (%d/%d)...",
+					currentOffset, response.Total))
+			moreResults, err := client.Find(p.title,
+				p.printedCount, currentOffset, p.isDoujinshiAllow)
 			if err != nil {
 				spinner.Fail("Failed to fetch additional results")
-				e.Printf("error while fetching additional results: %v\n", err)
+				e.Printfln("error while fetching additional results: %v", err)
 				os.Exit(1)
 			}
 			allResults.Data = append(allResults.Data, moreResults.Data...)
@@ -64,7 +67,7 @@ func (p findParams) Find() {
 			e.Printf("error while marshaling JSON: %v\n", err)
 			os.Exit(1)
 		}
-		timeStamp := time.Now().Format("20060102")
+		timeStamp := time.Now().Format("01_02_2006")
 		fileName := pterm.Sprintf("Search-Results_%s.json", timeStamp)
 
 		err = os.WriteFile(fileName, jsonData, 0644)
@@ -73,7 +76,8 @@ func (p findParams) Find() {
 			os.Exit(1)
 		}
 
-		spinner.Success("All %d results saved to %s", response.Total, fileName)
+		spinner.Success(pterm.Sprintfln("All %d results saved to %s",
+			response.Total, fileName))
 
 		return
 	}
