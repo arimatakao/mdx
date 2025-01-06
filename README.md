@@ -18,6 +18,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 - [mdx 📚](#mdx-)
 - [Features 💫](#features-)
 - [Installation ⚙️](#installation-)
+  - [Android](#android-termux)
   - [Using in Nix, NixOS](#using-in-nix-nixos)
   - [Post-installation steps](#post-installation-steps)
     - [Windows](#windows)
@@ -34,7 +35,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 ## Features 💫
 
-- Works on ***Windows, MacOS, Linux***.
+- Works on ***Windows, MacOS, Linux, Android***.
 - Downloads ***multiple chapters***.
 - Saves manga in ***CBZ, PDF, EPUB formats***.
 - Saves multiple chapters in ***one file***.
@@ -45,7 +46,7 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 ## Installation ⚙️
 
-1. Download `.tar.gz` archive from [releases page](https://github.com/arimatakao/mdx/releases).
+1. Download archive from [releases page](https://github.com/arimatakao/mdx/releases).
 2. Unarchive the file:
     - On Windows, use tools like 7-Zip.
     - On macOS and Linux, use the terminal: `tar -xzf mdx-*.tar.gz`
@@ -57,6 +58,52 @@ Alternatively, you can install via `go`:
 
 ```
 go install github.com/arimatakao/mdx@latest
+```
+
+### Android (Termux)
+
+1. Install `curl` package:
+
+```sh
+pkg install curl -y
+```
+
+2. Execute this command:
+
+```sh
+bash <(curl -s https://raw.githubusercontent.com/arimatakao/mdx/main/android_installation.sh)
+```
+
+You can also install `mdx` manually by running these commands in sequence:
+
+```sh
+pkg update && pkg upgrade -y
+```
+
+```sh
+pkg install -y golang
+```
+
+```sh
+echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+```
+
+```sh
+echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
+```
+
+```sh
+source ~/.bashrc
+```
+
+```sh
+go install github.com/arimatakao/mdx@latest
+```
+
+For use `mdx` just execute:
+
+```sh
+mdx
 ```
 
 ### Using in Nix, NixOS
