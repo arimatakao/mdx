@@ -30,7 +30,7 @@ buildGoModule {
 
   nativeBuildInputs = [ go ];
 
-  vendorHash = "sha256-+q8OQNU43E0Hdpinj+FSZdf+Nirdemc/Is4mZC8YAcs=";
+  vendorHash = "sha256-r3XvQr4Uzxt04hnmI4CeBumu1Fg7dMsW6THTI4ah3Eo=";
 
   # test suite requires network
   doCheck = false;
