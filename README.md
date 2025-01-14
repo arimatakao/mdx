@@ -40,16 +40,62 @@ Alternatively, you can install via `go`:
 go install github.com/arimatakao/mdx@latest
 ```
 
-### Using in Nix, NixOS
+### Android (Termux)
+
+1. Install `curl` package:
+
+```sh
+pkg install curl -y
+```
+
+2. Execute this command:
+
+```sh
+bash <(curl -s https://raw.githubusercontent.com/arimatakao/mdx/main/android_installation.sh)
+```
+
+You can also install `mdx` manually by running these commands in sequence:
+
+```sh
+pkg update && pkg upgrade -y
+```
+
+```sh
+pkg install -y golang
+```
+
+```sh
+echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+```
+
+```sh
+echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
+```
+
+```sh
+source ~/.bashrc
+```
+
+```sh
+go install github.com/arimatakao/mdx@latest
+```
+
+For use `mdx` just execute:
+
+```sh
+mdx
+```
+
+### Using in Nix/NixOS
 
 Using flakes to run `mdx` directly:
 ```
-nix run github:arimatakao/mdx -- download --help
+nix run 'git+https://github.com/arimatakao/mdx?tag=v1.12.3' -- download --help
 ```
 
 Using flakes to create a temporary shell with `mdx` available on the $PATH:
 ```
-nix shell github:arimatakao/mdx
+nix shell 'git+https://github.com/arimatakao/mdx?tag=v1.12.3'
 ```
 
 
