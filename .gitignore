@@ -1,1 +1,6 @@
 bin
+*.bin
+.vscode
+*.pdf
+*.cbz
+*.epub

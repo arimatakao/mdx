@@ -1,12 +1,12 @@
 package filekit
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
 	"github.com/go-shiori/go-epub"
+	"github.com/pterm/pterm"
 )
 
 const imageSectionTemplate = `<img src="%s" alt="%s" />`
@@ -41,21 +41,21 @@ func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName strin
 	m metadata.Metadata, chapterRange string) error {
 
 	for i, filePath := range e.filesPaths {
-		indexPage := fmt.Sprintf("%02d", i+1)
+		indexPage := pterm.Sprintf("%02d", i+1)
 		imageEpubPath, err := e.b.AddImage(filePath, indexPage)
 		if err != nil {
 			return err
 		}
-		sectionStr := fmt.Sprintf(imageSectionTemplate, imageEpubPath, indexPage)
+		sectionStr := pterm.Sprintf(imageSectionTemplate, imageEpubPath, indexPage)
 		_, err = e.b.AddSection(sectionStr, indexPage, "", "")
 		if err != nil {
 			return err
 		}
 	}
 
-	bookTitle := fmt.Sprintf("%s vol%s ch%s", m.CI.Title, m.CI.Volume, m.CI.Number)
+	bookTitle := pterm.Sprintf("%s vol%s ch%s", m.CI.Title, m.CI.Volume, m.CI.Number)
 	if chapterRange != "" {
-		bookTitle = fmt.Sprintf("%s ch%s", m.CI.Title, chapterRange)
+		bookTitle = pterm.Sprintf("%s ch%s", m.CI.Title, chapterRange)
 	}
 	e.b.SetTitle(bookTitle)
 
@@ -82,7 +82,7 @@ func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName strin
 }
 
 func (e *epubArchive) AddFile(fileExt string, imageBytes []byte) error {
-	fileName := fmt.Sprintf("%02d.%s", e.pageIndex, fileExt)
+	fileName := pterm.Sprintf("%02d.%s", e.pageIndex, fileExt)
 	filePath := filepath.Join(e.tempDir, fileName)
 	err := os.WriteFile(filePath, imageBytes, os.ModePerm)
 	if err != nil {

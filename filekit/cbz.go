@@ -5,11 +5,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"os"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
+	"github.com/pterm/pterm"
 )
 
 type cbzArchive struct {
@@ -78,7 +78,7 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 }
 
 func (c *cbzArchive) AddFile(fileExt string, src []byte) error {
-	fileName := fmt.Sprintf("%02d.%s", c.pageCounter, fileExt)
+	fileName := pterm.Sprintf("%02d.%s", c.pageCounter, fileExt)
 	buf := bytes.NewBuffer(src)
 	w, err := c.writer.Create(fileName)
 	if err != nil {

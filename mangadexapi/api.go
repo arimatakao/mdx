@@ -2,13 +2,13 @@ package mangadexapi
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/pterm/pterm"
 )
 
 const (
@@ -117,10 +117,13 @@ func NewClient(userAgent string) Clientapi {
 
 	c := resty.New().
 		SetRetryCount(5).
-		SetRetryWaitTime(time.Second*2).
+		SetRetryWaitTime(time.Second*10).
 		SetLogger(silentLogger{}).
 		SetBaseURL(base_url).
-		SetHeader("User-Agent", userAgent)
+		SetHeader("User-Agent", userAgent).
+		AddRetryCondition(func(r *resty.Response, err error) bool {
+			return r.StatusCode() == 429
+		})
 
 	return Clientapi{
 		c: c,
@@ -151,7 +154,7 @@ func (a Clientapi) Find(title string, limit, offset int, isDoujinshiAllow bool) 
 	mangaList := ResponseMangaList{}
 	respErr := ErrorResponse{}
 
-	query := fmt.Sprintf("title=%s&limit=%d&offset=%d&order[relevance]=asc"+
+	query := pterm.Sprintf("title=%s&limit=%d&offset=%d&order[relevance]=asc"+
 		"&includes[]=author&includes[]=artist",
 		title, limit, offset)
 
@@ -245,7 +248,7 @@ func (a Clientapi) GetChaptersList(limit, offset int, mangaId, language string) 
 	list := ResponseChapterList{}
 	respErr := ErrorResponse{}
 
-	query := fmt.Sprintf(
+	query := pterm.Sprintf(
 		"limit=%d&offset=%d&translatedLanguage[]=%s"+
 			"&includes[]=scanlation_group&order[volume]=asc&order[chapter]=asc"+
 			"&includeEmptyPages=0",
@@ -407,7 +410,7 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 	highBound := ((highestChapter + 11) / 10) * 10
 
 	for lowBound <= highBound {
-		query := fmt.Sprintf(
+		query := pterm.Sprintf(
 			"limit=%d&offset=%d&translatedLanguage[]=%s"+
 				"&includes[]=scanlation_group&includes[]=user"+
 				"&order[volume]=asc&order[chapter]=asc&"+
@@ -484,7 +487,7 @@ func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
 		return ChapterFullInfo{}, ErrBadInput
 	}
 
-	query := fmt.Sprintf(
+	query := pterm.Sprintf(
 		"limit=%d&&translatedLanguage[]=%s"+
 			"&includes[]=scanlation_group&includes[]=user"+
 			"&order[volume]=desc&order[chapter]=desc"+
@@ -560,7 +563,7 @@ func (a Clientapi) GetAllFullChaptersInfo(mangaId, language,
 	chapters := []Chapter{}
 
 	for isNotEmptyList {
-		query := fmt.Sprintf(
+		query := pterm.Sprintf(
 			"limit=%d&offset=%d&translatedLanguage[]=%s"+
 				"&includes[]=scanlation_group&includes[]=user"+
 				"&order[volume]=asc&order[chapter]=asc&"+
