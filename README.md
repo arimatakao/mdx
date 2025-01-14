@@ -110,12 +110,12 @@ mdx
 
 Using flakes to run `mdx` directly:
 ```
-nix run 'git+https://github.com/arimatakao/mdx?tag=v1.12.3' -- download --help
+nix run 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0' -- download --help
 ```
 
 Using flakes to create a temporary shell with `mdx` available on the $PATH:
 ```
-nix shell 'git+https://github.com/arimatakao/mdx?tag=v1.12.3'
+nix shell 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0'
 ```
 
 
