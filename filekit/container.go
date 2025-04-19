@@ -38,8 +38,17 @@ func NewContainer(extension string) (Container, error) {
 }
 
 func safeOutputPath(outputDir, outputFileName, extension string) string {
+	// unix
 	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
 	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
+	// windows
+	outputFileName = strings.ReplaceAll(outputFileName, "<", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, ">", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, ":", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `"`, "_")
+	outputFileName = strings.ReplaceAll(outputFileName, "?", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, "*", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, "|", "-")
 
 	outputPath := filepath.Join(outputDir, outputFileName+"."+extension)
 
