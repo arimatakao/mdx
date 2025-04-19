@@ -62,11 +62,6 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 		return err
 	}
 
-	err = c.writer.Close()
-	if err != nil {
-		return err
-	}
-
 	err = os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return err
@@ -74,7 +69,12 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 
 	outputPath := safeOutputPath(outputDir, outputFileName, CBZ_EXT)
 
-	return os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
+	err = os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	return c.writer.Close()
 }
 
 func (c *cbzArchive) AddFile(fileExt string, src []byte) error {
