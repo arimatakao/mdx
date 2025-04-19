@@ -1,7 +1,7 @@
 package app
 
 const (
-	VERSION = "v1.12.3"
+	VERSION = "v1.12.5"
 
 	API_VERSION = "v5.10.2"
 
