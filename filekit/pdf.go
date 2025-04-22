@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"image"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
@@ -47,16 +46,19 @@ func (p pdfFile) WriteOnDiskAndClose(outputDir, outputFileName string,
 		return err
 	}
 
-	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
-
 	outputPath := safeOutputPath(outputDir, outputFileName, PDF_EXT)
 
 	err = p.pdf.WritePdf(outputPath)
 	if err != nil {
 		return err
 	}
-	return p.pdf.Close()
+
+	err = p.pdf.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p pdfFile) AddFile(fileName string, imageBytes []byte) error {

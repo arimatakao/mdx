@@ -26,10 +26,10 @@ const (
 )
 
 var (
-	ErrUnknown          = errors.New("unknown error")
-	ErrBadInput         = errors.New("bad input")
-	ErrConnection       = errors.New("request is failed")
-	ErrUnexpectedHeader = errors.New("unexpected response header value")
+	ErrUnknown       = errors.New("unknown error")
+	ErrBadInput      = errors.New("bad input")
+	ErrConnection    = errors.New("request is failed")
+	ErrNotImageMedia = errors.New("response contain not jpg and png")
 )
 
 // getMangaDexPaths returns the path segments of a given link.
@@ -309,11 +309,12 @@ func (a Clientapi) GetChapterImageList(chapterId string) (ResponseChapterImages,
 // - isJpg: a boolean indicating whether the image is in JPG format.
 // Returns:
 // - []byte: the downloaded image as a byte slice.
+// - bool: is jpeg?
 // - error: an error if the download fails.
 func (a Clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
-	isJpg bool) ([]byte, error) {
+	isJpg bool) ([]byte, bool, error) {
 	if baseUrl == "" || chapterHash == "" || imageFilename == "" {
-		return nil, ErrBadInput
+		return nil, false, ErrBadInput
 	}
 
 	path := download_high_quility_path
@@ -332,19 +333,22 @@ func (a Clientapi) DownloadImage(baseUrl, chapterHash, imageFilename string,
 		}).
 		Get(path)
 	if err != nil {
-		return nil, ErrConnection
+		return nil, false, err
 	}
 
 	if resp.IsError() {
-		return nil, &respErr
+		return nil, false, &respErr
 	}
 
 	h := resp.Header().Get("Content-Type")
 	if h != "image/jpeg" && h != "image/png" {
-		return nil, ErrUnexpectedHeader
+		return nil, false, ErrNotImageMedia
+	}
+	if h != "image/jpeg" {
+		return resp.Body(), true, nil
 	}
 
-	return resp.Body(), nil
+	return resp.Body(), false, nil
 }
 
 // GetChapterImagesInFullInfo retrieves the full information of a chapter and chapter images.
@@ -539,6 +543,53 @@ func (a Clientapi) GetLastChapterFullInfo(mangaId, language,
 	}
 
 	return fullInfo, nil
+}
+
+func (a Clientapi) GetAllChaptersInfo(mangaId, language, translationGroup string) ([]Chapter, error) {
+	if mangaId == "" || language == "" {
+		return []Chapter{}, ErrBadInput
+	}
+
+	isNotEmptyList := true
+	limit := 96
+	offset := 0
+
+	chapters := []Chapter{}
+
+	for isNotEmptyList {
+		query := pterm.Sprintf(
+			"limit=%d&offset=%d&translatedLanguage[]=%s"+
+				"&includes[]=scanlation_group&includes[]=user"+
+				"&order[volume]=asc&order[chapter]=asc&"+
+				"&includeEmptyPages=0",
+			limit, offset, language)
+
+		list := ResponseChapterList{}
+		respErr := ErrorResponse{}
+
+		resp, err := a.c.R().
+			SetError(&respErr).
+			SetResult(&list).
+			SetPathParam("id", mangaId).
+			SetQueryString(query).
+			Get(manga_feed_path)
+		if err != nil {
+			return []Chapter{}, ErrConnection
+		}
+		if resp.IsError() {
+			return []Chapter{}, &respErr
+		}
+
+		c := list.GetAllChapters(translationGroup)
+		chapters = append(chapters, c...)
+
+		if len(c) == 0 {
+			isNotEmptyList = false
+		}
+		offset += limit
+	}
+
+	return chapters, nil
 }
 
 // GetAllFullChaptersInfo retrieves the full information of all chapters of a manga.

@@ -46,7 +46,7 @@ func init() {
 	downloadCmd.Flags().StringVarP(&mangaChapterUrl,
 		"this", "s", "", "specify the direct URL to a specific chapter")
 	downloadCmd.Flags().StringVarP(&outputExt,
-		"ext", "e", "cbz", "choose output file format: cbz pdf epub")
+		"ext", "e", "pdf", "choose output file format: pdf cbz epub")
 	downloadCmd.Flags().StringVarP(&outputDir,
 		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVarP(&language,
@@ -56,7 +56,7 @@ func init() {
 	downloadCmd.Flags().StringVarP(&chaptersRange,
 		"chapter", "c", "1", "specify chapters")
 	downloadCmd.Flags().StringVarP(&volumesRange,
-		"volume", "v", "0", "specify volumes")
+		"volume", "v", "", "specify volumes")
 	downloadCmd.Flags().BoolVarP(&isAllChapters,
 		"all", "a", false, "download all chapters")
 	downloadCmd.Flags().BoolVarP(&isJpgFileFormat,
@@ -107,9 +107,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	if outputExt != filekit.CBZ_EXT &&
-		outputExt != filekit.PDF_EXT &&
-		outputExt != filekit.EPUB_EXT {
+	if filekit.IsNotSupported(outputExt) {
 		e.Printfln("%s format of file is not supported", outputExt)
 		os.Exit(0)
 	}
@@ -118,18 +116,20 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if !isAllChapters {
-		lowestChapter, highestChapter = parseRange(chaptersRange, false)
-		lowestVolume, highestVolume = parseRange(volumesRange, true)
+	if volumesRange != "" {
+		isVolume = true
+		lowestVolume, highestVolume = parseRange(volumesRange)
+		return
+	}
+
+	if chaptersRange != "" {
+		lowestChapter, highestChapter = parseRange(chaptersRange)
+		return
 	}
 }
 
-func parseRange(rangeStr string, isVolume bool) (low, high int) {
-	formatType := "chapters"
-	if isVolume {
-		formatType = "volumes"
-	}
-	errorMsg := pterm.Sprintf("Malformatted %s range format %s", formatType, rangeStr)
+func parseRange(rangeStr string) (low, high int) {
+	errorMsg := pterm.Sprintf("Malformatted downloading range format %s", rangeStr)
 
 	single, err := strconv.Atoi(rangeStr)
 	if err == nil {
@@ -167,19 +167,14 @@ func parseRange(rangeStr string, isVolume bool) (low, high int) {
 }
 
 func downloadManga(cmd *cobra.Command, args []string) {
-	params := mdx.NewDownloadParam(chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume, language,
-		translateGroup, outputDir, outputExt, isJpgFileFormat, isMergeChapters, isVolume)
+	params := mdx.NewDownloadParam(
+		chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume,
+		language, translateGroup, outputDir, outputExt,
+		isJpgFileFormat, isMergeChapters, isVolume, isAllChapters, isLastChapter)
+
 	if isInteractiveMode {
 		params.RunInteractiveDownload()
-	} else if mangaChapterId != "" {
-		params.DownloadSpecificChapter(mangaChapterId)
-	} else if highestVolume != 0 && lowestVolume != 0 {
-		params.DownloadVolumes(mangaId)
-	} else if isLastChapter {
-		params.DownloadLastChapter(mangaId)
-	} else if isAllChapters {
-		params.DownloadAllChapters(mangaId, isVolume)
 	} else {
-		params.DownloadChapters(mangaId)
+		params.RunDownload(mangaId, mangaChapterId)
 	}
 }

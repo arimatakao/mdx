@@ -17,7 +17,7 @@ import (
 
 var (
 	ErrEmptyChapters         = errors.New("empty chapters")
-	selectedVolumeChapterMap map[string][]mangadexapi.Chapter
+	selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
 )
 
 type dlParam struct {
@@ -36,10 +36,12 @@ type dlParam struct {
 	isJpg          bool
 	isMerge        bool
 	isVolume       bool
+	isAll          bool
+	isLast         bool
 }
 
 func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter, lowestVolume, highestVolume int,
-	language, translateGroup, outputDir, outputExt string, isJpg, isMerge, isVolume bool) dlParam {
+	language, translateGroup, outputDir, outputExt string, isJpg, isMerge, isVolume, isAll, isLast bool) dlParam {
 
 	return dlParam{
 		mangaInfo:      mangadexapi.MangaInfo{},
@@ -57,6 +59,8 @@ func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highest
 		isJpg:          isJpg,
 		isMerge:        isMerge,
 		isVolume:       isVolume,
+		isAll:          isAll,
+		isLast:         isLast,
 	}
 }
 
@@ -93,6 +97,142 @@ func (p dlParam) getMangaInfo(mangaId string) (mangadexapi.MangaInfo, error) {
 	return resp.MangaInfo(), nil
 }
 
+func (p *dlParam) filterChapters(chapters []mangadexapi.Chapter) []mangadexapi.Chapter {
+	if p.isAll {
+		return chapters
+	}
+
+	if p.isLast {
+		return []mangadexapi.Chapter{chapters[len(chapters)-1]}
+	}
+
+	var selectedChapters []mangadexapi.Chapter
+
+	if p.isVolume {
+		spinnerVolInfo, _ := pterm.DefaultSpinner.Start("Creating volume and chapter map...")
+		for _, c := range chapters {
+			volumeInt, err := strconv.Atoi(c.Volume())
+			if err != nil {
+				continue
+			}
+			if p.lowestVolume <= volumeInt && volumeInt <= p.highestVolume {
+				selectedChapters = append(selectedChapters, c)
+				selectedVolumeChapterMap[c.Volume()] = append(selectedVolumeChapterMap[c.Volume()], c)
+			}
+		}
+		spinnerVolInfo.Success("Created volume and chapter map")
+		return selectedChapters
+	}
+
+	if p.highestChapter == p.lowestChapter {
+		for _, c := range chapters {
+			chapterNum, err := strconv.Atoi(c.Number())
+			if err != nil {
+				continue
+			}
+
+			if p.highestChapter == chapterNum {
+				selectedChapters = append(selectedChapters, c)
+				break
+			}
+
+		}
+	} else {
+		for _, c := range chapters {
+			chapterNum, err := strconv.Atoi(c.Number())
+			if err != nil {
+				continue
+			}
+
+			if p.lowestChapter <= chapterNum && chapterNum <= p.highestChapter {
+				selectedChapters = append(selectedChapters, c)
+			}
+
+		}
+
+	}
+
+	return selectedChapters
+}
+
+func (p dlParam) RunDownload(mangaId, chapterId string) {
+	// Step 0: If a specific chapter is provided, download it
+	if chapterId != "" {
+		spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
+		resp, err := client.GetChapterInfo(chapterId)
+		if err != nil {
+			spinnerChapInfo.Fail("Failed to get chapter info")
+			os.Exit(1)
+		}
+		chapterInfo := resp.GetChapterInfo()
+		chapterFullInfo, err := client.GetChapterImagesInFullInfo(chapterInfo)
+		if err != nil {
+			spinnerChapInfo.Fail("Failed to get chapter info")
+			os.Exit(1)
+		}
+		spinnerChapInfo.Success("Fetched chapter info")
+		p.chapters = []mangadexapi.ChapterFullInfo{chapterFullInfo}
+		p.flexDownloadChapters()
+		return
+	}
+
+	// Step 1: Fetch manga information
+	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
+	mangaInfo, err := p.getMangaInfo(mangaId)
+	if err != nil {
+		spinnerMangaInfo.Fail("Failed to get manga info")
+		os.Exit(1)
+	}
+	p.mangaInfo = mangaInfo
+	spinnerMangaInfo.Success("Fetched manga info")
+
+	// Step 2: Print the fetched manga information
+	printMangaInfo(mangaInfo)
+
+	// Step 3: Fetch all chapters information without images
+	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
+	chapters, err := client.GetAllChaptersInfo(mangaId, p.language, p.translateGroup)
+	if err != nil {
+		spinnerChapInfo.Fail("Failed to get chapters info")
+		e.Printf("While getting manga chapters: %v\n", err)
+		os.Exit(1)
+	}
+	spinnerChapInfo.Success("Fetched chapters info")
+
+	// Step 4: Filter the fetched chapters
+	filteredChapters := p.filterChapters(chapters)
+	if len(filteredChapters) == 0 {
+		e.Println("No chapters found after filtering, try another range, language, or translation group.")
+		os.Exit(0)
+	}
+
+	// Step 5: Load image links on pages for each filtered chapter
+	for _, c := range filteredChapters {
+		fullInfo, err := client.GetChapterImagesInFullInfo(c)
+		if err != nil {
+			e.Println("Error while getting images download list")
+			os.Exit(1)
+		}
+		p.chapters = append(p.chapters, fullInfo)
+	}
+
+	// Step 6: Download the chapters
+	p.flexDownloadChapters()
+}
+
+func (p dlParam) flexDownloadChapters() {
+	if p.isVolume && p.isMerge {
+		// Download chapters merged by volumes
+		p.downloadMergeVolumes()
+	} else if p.isMerge {
+		// Merge all chapters into one file
+		p.downloadMergeChapters()
+	} else {
+		// Download each chapter as a separate file
+		p.downloadChapters()
+	}
+}
+
 func (p dlParam) downloadMergeVolumes() {
 	for volumeId, volume := range selectedVolumeChapterMap {
 		containerFile, err := filekit.NewContainer(p.outputExt)
@@ -104,9 +244,14 @@ func (p dlParam) downloadMergeVolumes() {
 		volumeChaptersRange := []string{}
 		for _, chapter := range volume {
 			for _, chapterFullInfo := range p.chapters {
-				if chapterFullInfo.Info.ID == chapter.ID && !contains(volumeChaptersRange, chapterFullInfo.Info.Number()) {
+				if chapterFullInfo.Info.ID == chapter.ID &&
+					!contains(volumeChaptersRange, chapterFullInfo.Info.Number()) {
+
 					volumeChaptersRange = append(volumeChaptersRange, chapterFullInfo.Info.Number())
 					volumeId = chapterFullInfo.Volume()
+
+					printChapterInfo(chapterFullInfo)
+
 					err = p.downloadProcess(containerFile, chapterFullInfo)
 					if err != nil {
 						e.Printf("While downloading chapter: %v\n", err)
@@ -158,14 +303,8 @@ func (p dlParam) downloadMergeChapters() {
 		chaptersRange += "-" + p.chapters[len(p.chapters)-1].Number()
 	}
 
-	filename := ""
-	if p.chapters[0].Translator() == "" {
-		filename = pterm.Sprintf("[%s] %s ch. %s",
-			p.language, p.mangaInfo.Title("en"), chaptersRange)
-	} else {
-		filename = pterm.Sprintf("[%s] %s ch. %s | %s",
-			p.language, p.mangaInfo.Title("en"), chaptersRange, p.chapters[0].Translator())
-	}
+	filename := pterm.Sprintf("[%s %s] %s ch. %s",
+		p.language, p.chapters[0].Translator(), p.mangaInfo.Title("en"), chaptersRange)
 
 	spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
@@ -196,17 +335,9 @@ func (p dlParam) downloadChapters() {
 			os.Exit(1)
 		}
 
-		filename := ""
-		if chapter.Translator() == "" {
-			filename = pterm.Sprintf("[%s] %s vol. %s ch. %s",
-				p.language, p.mangaInfo.Title("en"), chapter.Volume(),
-				chapter.Number())
-		} else {
-			filename = pterm.Sprintf("[%s] %s vol. %s ch. %s | %s",
-				p.language, p.mangaInfo.Title("en"), chapter.Volume(),
-				chapter.Number(),
-				chapter.Translator())
-		}
+		filename := pterm.Sprintf("[%s %s] %s vol. %s ch. %s",
+			p.language, chapter.Translator(), p.mangaInfo.Title("en"), chapter.Volume(),
+			chapter.Number())
 
 		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
@@ -245,12 +376,19 @@ func (p dlParam) downloadProcess(outputFile filekit.Container,
 	defer dlbar.Stop()
 
 	for _, imageFile := range files {
-		outputImage, err := client.DownloadImage(chapter.DownloadBaseURL,
+		outputImage, isRealJpg, err := client.DownloadImage(chapter.DownloadBaseURL,
 			chapter.HashId, imageFile, p.isJpg)
-		if err != nil {
+		if errors.Is(err, mangadexapi.ErrNotImageMedia) {
+			dp.Println(imageFile + " media file in chapter is not supported")
+			continue
+		} else if err != nil {
 			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
 				UpdateTitle("Failed downloading").Stop()
 			return err
+		}
+
+		if isRealJpg {
+			imgExt = "jpg"
 		}
 
 		if err := outputFile.AddFile(imgExt, outputImage); err != nil {
@@ -262,209 +400,6 @@ func (p dlParam) downloadProcess(outputFile filekit.Container,
 	}
 	dp.Println("")
 	return nil
-}
-
-func (p dlParam) DownloadVolumes(mangaId string) {
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	mangaInfo, err := p.getMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		os.Exit(1)
-	}
-	spinnerMangaInfo.Success("Fetched manga info")
-	printShortMangaInfo(mangaInfo)
-	p.mangaInfo = mangaInfo
-	spinnerVolChapInfo, _ := pterm.DefaultSpinner.Start("Fetching volume and chapter info...")
-	selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
-	foundChapters := []mangadexapi.Chapter{}
-	for offset := 0; ; offset += 50 {
-		chapterlist, err := client.GetChaptersList(96, offset, mangaId, p.language)
-		if err != nil {
-			spinnerVolChapInfo.Fail("Failed to get volume info")
-			os.Exit(1)
-		}
-
-		if len(chapterlist.Data) == 0 {
-			break
-		}
-
-		foundChapters = append(foundChapters, chapterlist.Data...)
-	}
-
-	if len(foundChapters) == 0 {
-		spinnerVolChapInfo.Fail("Volume not found, try another language or translation group")
-		return
-	}
-	spinnerVolChapInfo.Success("Fetched volume info")
-	spinnerVolInfo, _ := pterm.DefaultSpinner.Start("Creating volume and chapter map...")
-	for _, chapter := range foundChapters {
-		volume := chapter.Volume()
-		// convert volume to int
-		volumeInt, err := strconv.Atoi(volume)
-		if err != nil {
-			continue
-		}
-		if volumeInt >= p.lowestVolume && volumeInt <= p.highestVolume {
-			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter)
-		}
-	}
-	spinnerVolInfo.Success("Created volume and chapter map")
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
-	chaptersFullInfo := []mangadexapi.ChapterFullInfo{}
-	for _, volume := range selectedVolumeChapterMap {
-		for _, chapter := range volume {
-			chapterFullInfo := mangadexapi.ChapterFullInfo{}
-			chapterFullInfo.Info = chapter
-
-			imageInfo, err := client.GetChapterImageList(chapter.ID)
-			if err != nil {
-				spinnerChapInfo.Fail("Failed to get chapter info")
-				os.Exit(1)
-			}
-			chapterFullInfo.DownloadBaseURL = imageInfo.BaseURL
-			chapterFullInfo.HashId = imageInfo.ChapterMetaInfo.Hash
-			chapterFullInfo.PngFiles = imageInfo.ChapterMetaInfo.Data
-			chapterFullInfo.JpgFiles = imageInfo.ChapterMetaInfo.DataSaver
-
-			chaptersFullInfo = append(chaptersFullInfo, chapterFullInfo)
-		}
-	}
-	spinnerChapInfo.Success("Fetched chapter info")
-	p.chapters = chaptersFullInfo
-	if p.isMerge {
-		p.downloadMergeVolumes()
-	} else {
-		p.downloadChapters()
-	}
-}
-
-func (p dlParam) DownloadSpecificChapter(chapterId string) {
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
-	resp, err := client.GetChapterInfo(chapterId)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapter info")
-		os.Exit(1)
-	}
-	chapterInfo := resp.GetChapterInfo()
-	chapterFullInfo, err := client.GetChapterImagesInFullInfo(chapterInfo)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapter info")
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapter info")
-
-	mangaId := chapterInfo.GetMangaId()
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	mangaInfo, err := p.getMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		os.Exit(1)
-	}
-	spinnerMangaInfo.Success("Fetched manga info")
-	p.chapters = []mangadexapi.ChapterFullInfo{chapterFullInfo}
-	printShortMangaInfo(mangaInfo)
-	p.downloadChapters()
-}
-
-func (p dlParam) DownloadLastChapter(mangaId string) {
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	mangaInfo, err := p.getMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		os.Exit(1)
-	}
-	spinnerMangaInfo.Success("Fetched manga info")
-	p.mangaInfo = mangaInfo
-
-	printShortMangaInfo(mangaInfo)
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapter info...")
-	chapterFullInfo, err := client.
-		GetLastChapterFullInfo(mangaId, p.language, p.translateGroup)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapter info")
-		e.Printf("While getting manga chapters: %v\n", err)
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapter info")
-
-	p.chapters = []mangadexapi.ChapterFullInfo{chapterFullInfo}
-
-	p.downloadChapters()
-}
-
-func (p dlParam) DownloadChapters(mangaId string) {
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	mangaInfo, err := p.getMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		os.Exit(1)
-	}
-	spinnerMangaInfo.Success("Fetched manga info")
-	p.mangaInfo = mangaInfo
-
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
-	p.chapters, err = client.GetFullChaptersInfo(mangaId, p.language, p.translateGroup,
-		p.lowestChapter, p.highestChapter)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapters info")
-		e.Printf("While getting manga chapters: %v\n", err)
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapters info")
-
-	if len(p.chapters) == 0 {
-		e.Printf("Chapters %s not found, try another "+
-			"range, language, translation group etc.\n", p.chaptersRange)
-		os.Exit(0)
-	}
-
-	printShortMangaInfo(mangaInfo)
-	if p.isMerge {
-		p.downloadMergeChapters()
-	} else {
-		p.downloadChapters()
-	}
-}
-
-func (p dlParam) DownloadAllChapters(mangaId string, isVolume bool) {
-	spinnerMangaInfo, _ := pterm.DefaultSpinner.Start("Fetching manga info...")
-	mangaInfo, err := p.getMangaInfo(mangaId)
-	if err != nil {
-		spinnerMangaInfo.Fail("Failed to get manga info")
-		os.Exit(1)
-	}
-	spinnerMangaInfo.Success("Fetched manga info")
-	p.mangaInfo = mangaInfo
-
-	spinnerChapInfo, _ := pterm.DefaultSpinner.Start("Fetching chapters info...")
-	p.chapters, err = client.GetAllFullChaptersInfo(mangaId, p.language, p.translateGroup)
-	if err != nil {
-		spinnerChapInfo.Fail("Failed to get chapters info")
-		e.Printf("While getting manga chapters: %v\n", err)
-		os.Exit(1)
-	}
-	spinnerChapInfo.Success("Fetched chapters info")
-
-	if len(p.chapters) == 0 {
-		e.Println("Chapters not found, try another language or translation group")
-		os.Exit(0)
-	}
-
-	printShortMangaInfo(mangaInfo)
-
-	if isVolume {
-		// Create volume mapping for all chapters
-		selectedVolumeChapterMap = make(map[string][]mangadexapi.Chapter)
-		for _, chapter := range p.chapters {
-			volume := chapter.Volume()
-			selectedVolumeChapterMap[volume] = append(selectedVolumeChapterMap[volume], chapter.Info)
-		}
-		p.downloadMergeVolumes()
-	} else if p.isMerge {
-		p.downloadMergeChapters()
-	} else {
-		p.downloadChapters()
-	}
 }
 
 const OPTION_MANGA_TEMPLATE = "%d | %s | %s"                            // number | authors | title

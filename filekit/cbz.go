@@ -8,8 +8,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/arimatakao/mdx/filekit/metadata"
 	"github.com/pterm/pterm"
+
+	"github.com/arimatakao/mdx/filekit/metadata"
 )
 
 type cbzArchive struct {
@@ -62,19 +63,19 @@ func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 		return err
 	}
 
-	err = os.MkdirAll(outputDir, os.ModePerm)
+	outputPath := safeOutputPath(outputDir, outputFileName, CBZ_EXT)
+
+	err = c.writer.Close()
 	if err != nil {
 		return err
 	}
-
-	outputPath := safeOutputPath(outputDir, outputFileName, CBZ_EXT)
 
 	err = os.WriteFile(outputPath, c.buf.Bytes(), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	return c.writer.Close()
+	return nil
 }
 
 func (c *cbzArchive) AddFile(fileExt string, src []byte) error {

@@ -18,6 +18,12 @@ const (
 
 var ErrExtensionNotSupport = errors.New("extension container is not supported")
 
+func IsNotSupported(fileFormat string) bool {
+	return fileFormat != CBZ_EXT &&
+		fileFormat != PDF_EXT &&
+		fileFormat != EPUB_EXT
+}
+
 type Container interface {
 	WriteOnDiskAndClose(outputDir string, outputFileName string, m metadata.Metadata, chapterRange string) error
 	AddFile(fileExt string, imageBytes []byte) error
