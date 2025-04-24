@@ -82,12 +82,14 @@ Usage examples:
 docker run --rm mdx dl ping
 # Download
 docker run --rm -v /your/download/dir:/download mdx dl -o /download <url>
+# Interactive download
+docker run --rm -it -v /your/download/dir:/download mdx dl -o /download <url>
 ```
 
 Also add useful alias for your shell:
 
 ```
-alias containermdx="docker run --rm -v /your/download/dir:/download mdx"
+alias containermdx="docker run --rm -it -v /your/download/dir:/download mdx"
 ```
 
 It allows you to run mdx anywhere in your shell using the command `containermdx`
