@@ -60,6 +60,37 @@ Alternatively, you can install via `go`:
 go install github.com/arimatakao/mdx@latest
 ```
 
+### Docker
+
+1. Clone the repository:
+
+```sh
+git clone https://github.com/arimatakao/mdx.git
+```
+
+2. Build docker image:
+
+```sh
+docker build -t mdx .
+```
+
+Usage examples:
+
+```sh
+# Ping
+docker run --rm mdx dl ping
+# Download
+docker run --rm -v /your/download/dir:/download mdx dl -o /download <url>
+```
+
+Also add useful alias for your shell:
+
+```
+alias containermdx="docker run --rm -v /your/download/dir:/download mdx"
+```
+
+It allows you to run mdx anywhere in your shell using the command `containermdx`
+
 ### Android (Termux)
 
 1. Install `curl` package:
