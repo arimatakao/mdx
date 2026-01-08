@@ -44,11 +44,17 @@ func (e *epubArchive) WriteOnDiskAndClose(outputDir string, outputFileName strin
 		indexPage := pterm.Sprintf("%02d", i+1)
 		imageEpubPath, err := e.b.AddImage(filePath, indexPage)
 		if err != nil {
+			if err = os.RemoveAll(e.tempDir); err != nil {
+				return err
+			}
 			return err
 		}
 		sectionStr := pterm.Sprintf(imageSectionTemplate, imageEpubPath, indexPage)
 		_, err = e.b.AddSection(sectionStr, indexPage, "", "")
 		if err != nil {
+			if err = os.RemoveAll(e.tempDir); err != nil {
+				return err
+			}
 			return err
 		}
 	}
