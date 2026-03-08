@@ -20,7 +20,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: false
 
-  release:
+  build-artifacts:
     name: Build and Publish Release
     runs-on: ubuntu-latest
     needs: create-release
@@ -128,12 +128,59 @@ jobs:
             dist/packages/*
           if-no-files-found: error
 
+  build-windows-msi-installer:
+    name: Build Windows MSI
+    runs-on: windows-latest
+    needs: build-artifacts
+    steps:
+      - uses: actions/checkout@v6.0.0
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v8.0.0
+        with:
+          name: release-windows-amd64
+          path: dist/windows-amd64
+
+      - name: Extract Windows binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.ref_name }}"
+          TARGET_DIR="dist/windows-amd64"
+          ARCHIVE_NAME="mdx_${VERSION}_windows_amd64.zip"
+          cd "${TARGET_DIR}"
+          unzip -o "${ARCHIVE_NAME}"
+
+      - name: Install go-msi
+        run: choco install -y "go-msi"
+
+      - name: Build Windows Installer MSI
+        uses: AliceOh/CreateWindowsInstaller@1.0.0
+        with:
+          exefile: dist/windows-amd64/mdx.exe
+
+      - name: Rename MSI
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_DIR="dist/windows-amd64"
+          VERSION="${{ github.ref_name }}"
+          mv "${TARGET_DIR}/mdx.exe.msi" "${TARGET_DIR}/mdx-${VERSION}-windows-installer.msi"
+
+      - name: Upload MSI Artifact
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: release-windows-msi-amd64
+          path: dist/windows-amd64/mdx-${{ github.ref_name }}-windows-installer.msi
+          if-no-files-found: error
+
   upload-assets:
     name: Upload Assets to Release
     runs-on: ubuntu-latest
     needs:
       - create-release
-      - release
+      - build-artifacts
+      - build-windows-msi-installer
     steps:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8.0.0
