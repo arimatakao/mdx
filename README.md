@@ -36,11 +36,13 @@ Install automatically with PowerShell script:
 powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/arimatakao/mdx/main/install.ps1 | iex"
 ```
 
-Or download and run `mdx-*-windows-installer.msi`:
+Or download `mdx-*-windows-installer.msi` and run this command in `cmd`:
 
 ```bat
 msiexec /i "C:\path\to\mdx-...-windows-installer.msi"
 ```
+
+Note: **Administrator permission may be required.**
 
 ### MacOS
 
