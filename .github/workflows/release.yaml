@@ -6,13 +6,24 @@ on:
       - 'v*.*.*'
 
 permissions:
-    contents: write
-    packages: write
+  contents: write
+  packages: write
 
 jobs:
-  releases-matrix:
-    name: Release Go Binary
+  create-release:
+    name: Create Release
     runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        uses: softprops/action-gh-release@v2.5.0
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: false
+
+  release:
+    name: Build and Publish Release
+    runs-on: ubuntu-latest
+    needs: create-release
     strategy:
       matrix:
         goos: [linux, windows, darwin]
@@ -20,16 +31,75 @@ jobs:
         exclude:
           - goarch: "386"
             goos: darwin
-          - goarch: arm64
-            goos: windows
     steps:
-    - uses: actions/checkout@v4
-    - uses: wangyoucao577/go-release-action@v1.50
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        goversion: "1.26.1"
-        project_path: "./"
-        binary_name: "mdx"
-        extra_files: LICENSE README.md
+      - uses: actions/checkout@v6.0.0
+
+      - name: Setup Go
+        uses: actions/setup-go@v6.3.0
+        with:
+          go-version-file: 'go.mod'
+          cache-dependency-path: 'go.sum'
+
+      - name: Build and Package
+        id: build_package
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+          BIN_NAME="mdx"
+          VERSION="${{ github.ref_name }}"
+          TARGET_DIR="dist/${{ matrix.goos }}-${{ matrix.goarch }}"
+          ARCHIVE_BASE="mdx_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          mkdir -p "${TARGET_DIR}"
+
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            BIN_NAME="${BIN_NAME}.exe"
+            ARCHIVE_NAME="${ARCHIVE_BASE}.zip"
+          else
+            ARCHIVE_NAME="${ARCHIVE_BASE}.tar.gz"
+          fi
+
+          CGO_ENABLED=0 GOOS="${{ matrix.goos }}" GOARCH="${{ matrix.goarch }}" go build -o "${TARGET_DIR}/${BIN_NAME}" ./
+          cp LICENSE README.md "${TARGET_DIR}/"
+
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            (
+              cd "${TARGET_DIR}"
+              zip -r "${ARCHIVE_NAME}" "${BIN_NAME}" LICENSE README.md
+            )
+            mv "${TARGET_DIR}/${ARCHIVE_NAME}" "dist/${ARCHIVE_NAME}"
+          else
+            tar -C "${TARGET_DIR}" -czf "dist/${ARCHIVE_NAME}" "${BIN_NAME}" LICENSE README.md
+          fi
+
+          echo "archive_name=${ARCHIVE_NAME}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/${{ steps.build_package.outputs.archive_name }}
+          if-no-files-found: error
+
+  upload-assets:
+    name: Upload Assets to Release
+    runs-on: ubuntu-latest
+    needs:
+      - create-release
+      - release
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v8.0.0
+        with:
+          path: dist
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Upload Artifacts to Release
+        uses: svenstaro/upload-release-action@2.11.4
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          file_glob: true
+          tag: ${{ github.ref_name }}
+          overwrite: true
