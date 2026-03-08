@@ -1,0 +1,21 @@
+name: mdx
+arch: ${GOARCH}
+platform: linux
+version: ${MDX_VERSION}
+version_schema: semver
+release: 1
+maintainer: arimatakao
+description: |
+  mdx is a CLI application for downloading manga from MangaDex.
+homepage: https://github.com/arimatakao/mdx
+license: MIT
+vendor: arimatakao
+
+contents:
+  - src: ./bin/mdx
+    dst: /usr/bin/mdx
+    file_info:
+      mode: 0755
+
+rpm:
+  compression: zstd

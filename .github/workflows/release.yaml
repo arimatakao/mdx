@@ -74,11 +74,58 @@ jobs:
 
           echo "archive_name=${ARCHIVE_NAME}" >> "${GITHUB_OUTPUT}"
 
-      - name: Upload Build Artifact
+      - name: Prepare nFPM env
+        if: matrix.goos == 'linux'
+        run: |
+          set -euo pipefail
+          mkdir -p bin dist/packages
+          cp "dist/${{ matrix.goos }}-${{ matrix.goarch }}/mdx" ./bin/mdx
+          echo "MDX_VERSION=${GITHUB_REF_NAME#v}" >> "${GITHUB_ENV}"
+          echo "GOARCH=${{ matrix.goarch }}" >> "${GITHUB_ENV}"
+
+      - name: Create deb package
+        if: matrix.goos == 'linux'
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: v2.45.0
+          packager: deb
+          config: packaging/deb.yaml
+          target: dist/packages/
+
+      - name: Create rpm package
+        if: matrix.goos == 'linux'
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: v2.45.0
+          packager: rpm
+          config: packaging/rpm.yaml
+          target: dist/packages/
+
+      - name: Create apk package
+        if: matrix.goos == 'linux'
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: v2.45.0
+          packager: apk
+          config: packaging/apk.yaml
+          target: dist/packages/
+
+      - name: Create archlinux package
+        if: matrix.goos == 'linux'
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: v2.45.0
+          packager: archlinux
+          config: packaging/archlinux.yaml
+          target: dist/packages/
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v7.0.0
         with:
           name: release-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/${{ steps.build_package.outputs.archive_name }}
+          path: |
+            dist/${{ steps.build_package.outputs.archive_name }}
+            dist/packages/*
           if-no-files-found: error
 
   upload-assets:

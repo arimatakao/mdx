@@ -4,3 +4,8 @@ bin
 *.pdf
 *.cbz
 *.epub
+linuxpackages
+*.deb
+*.rpm
+*.apk
+*.pkg.tar.zst
