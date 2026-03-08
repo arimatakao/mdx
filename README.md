@@ -34,6 +34,11 @@ Download and run `mdx-*-windows-installer.msi`.
 
 ### Linux
 
+Quick install (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
+```sh
+curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
+```
+
 Debian/Ubuntu (`mdx_*_linux_*.deb`):
 ```sh
 sudo apt install ./mdx_*_linux_*.deb
@@ -56,7 +61,12 @@ sudo pacman -U ./mdx_*_linux_*.pkg.tar.zst
 
 ### MacOS
 
-Download the macOS archive (`mdx_*_darwin_*.tar.gz`) and run:
+Install with the script (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
+```sh
+curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
+```
+
+Or download the macOS archive (`mdx_*_darwin_*.tar.gz`) and run:
 ```sh
 tar -xzf mdx_*_darwin_*.tar.gz
 ./mdx --help
