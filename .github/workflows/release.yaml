@@ -1,8 +1,9 @@
 name: Release Go Binaries in tar.gz
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*.*.*'
 
 permissions:
     contents: write
@@ -28,7 +29,7 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
-        goversion: "1.22.4"
+        goversion: "1.26.1"
         project_path: "./"
         binary_name: "mdx"
         extra_files: LICENSE README.md
