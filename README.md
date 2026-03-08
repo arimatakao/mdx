@@ -30,7 +30,17 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 ### Windows (recommended)
 
-Download and run `mdx-*-windows-installer.msi`.
+Install automatically with PowerShell script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/arimatakao/mdx/main/install.ps1 | iex"
+```
+
+Or download and run `mdx-*-windows-installer.msi`:
+
+```bat
+msiexec /i "C:\path\to\mdx-...-windows-installer.msi"
+```
 
 ### MacOS
 
