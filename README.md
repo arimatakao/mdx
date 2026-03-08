@@ -32,44 +32,59 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 Download and run `mdx-*-windows-installer.msi`.
 
-### Linux
-
-Quick install (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
-```sh
-curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
-```
-
-Debian/Ubuntu (`mdx_*_linux_*.deb`):
-```sh
-sudo apt install ./mdx_*_linux_*.deb
-```
-
-RHEL/Fedora (`mdx_*_linux_*.rpm`):
-```sh
-sudo dnf install ./mdx_*_linux_*.rpm
-```
-
-Alpine (`mdx_*_linux_*.apk`):
-```sh
-sudo apk add --allow-untrusted ./mdx_*_linux_*.apk
-```
-
-Arch Linux (`mdx_*_linux_*.pkg.tar.zst`):
-```sh
-sudo pacman -U ./mdx_*_linux_*.pkg.tar.zst
-```
-
 ### MacOS
 
 Install with the script (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
 ```
 
 Or download the macOS archive (`mdx_*_darwin_*.tar.gz`) and run:
+
 ```sh
 tar -xzf mdx_*_darwin_*.tar.gz
 ./mdx --help
+```
+
+### Linux
+
+Quick install (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
+```
+
+Install via Linux package manager (supported: `apt`, `dnf`, `yum`, `apk`, `pacman`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | sudo bash -s -- --pkg
+```
+
+Manual way: first download the package file from the [Releases page](https://github.com/arimatakao/mdx/releases), then run the install command for your distro.
+
+Debian/Ubuntu (`mdx_*_linux_*.deb`):
+
+```sh
+sudo apt install ./mdx_*_linux_*.deb
+```
+
+RHEL/Fedora (`mdx_*_linux_*.rpm`):
+
+```sh
+sudo dnf install ./mdx_*_linux_*.rpm
+```
+
+Alpine (`mdx_*_linux_*.apk`):
+
+```sh
+sudo apk add --allow-untrusted ./mdx_*_linux_*.apk
+```
+
+Arch Linux (`mdx_*_linux_*.pkg.tar.zst`):
+
+```sh
+sudo pacman -U ./mdx_*_linux_*.pkg.tar.zst
 ```
 
 ### Portable binaries
