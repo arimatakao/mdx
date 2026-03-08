@@ -8,11 +8,16 @@ INSTALL_MODE="tar"
 VERSION_INPUT="latest"
 AUTO_YES="false"
 TMP_DIR=""
+REINSTALL_CONFIRMED="false"
 
 cleanup_tmp_dir() {
   if [ -n "${TMP_DIR:-}" ]; then
     rm -rf "$TMP_DIR"
   fi
+}
+
+log_step() {
+  echo "==> $1"
 }
 
 usage() {
@@ -171,6 +176,95 @@ resolve_version() {
   fi
 }
 
+normalize_version() {
+  local input="${1#v}"
+  input="${input%%[-+]*}"
+  echo "$input"
+}
+
+version_to_sort_key() {
+  local version major minor patch build rest
+  version="$(normalize_version "$1")"
+  IFS='.' read -r major minor patch build rest <<EOF
+$version
+EOF
+  major="${major:-0}"
+  minor="${minor:-0}"
+  patch="${patch:-0}"
+  build="${build:-0}"
+  printf '%010d%010d%010d%010d\n' "$major" "$minor" "$patch" "$build"
+}
+
+is_version_newer() {
+  local target_key current_key
+  target_key="$(version_to_sort_key "$1")"
+  current_key="$(version_to_sort_key "$2")"
+  [ "$target_key" \> "$current_key" ]
+}
+
+get_installed_version() {
+  local version_output candidate_dir candidate_path match
+  local -a candidates=()
+
+  if [ "$INSTALL_MODE" = "tar" ]; then
+    candidate_dir="${INSTALL_DIR:-${HOME}/.local/bin}"
+    candidate_path="${candidate_dir}/${BIN_NAME}"
+    if [ -x "$candidate_path" ]; then
+      candidates+=("$candidate_path")
+    fi
+  fi
+
+  if candidate_path="$(command -v "${BIN_NAME}" 2>/dev/null)"; then
+    candidates+=("$candidate_path")
+  fi
+
+  if [ "${#candidates[@]}" -eq 0 ]; then
+    return 1
+  fi
+
+  for candidate_path in "${candidates[@]}"; do
+    version_output="$("$candidate_path" -v 2>/dev/null || "$candidate_path" --version 2>/dev/null || "$candidate_path" version 2>/dev/null || true)"
+    if [ -z "$version_output" ]; then
+      continue
+    fi
+
+    match="$(
+      printf '%s\n' "$version_output" \
+        | sed -E 's/\x1B\[[0-9;]*[mK]//g' \
+        | grep -Eo 'v?[0-9]+(\.[0-9]+){1,3}([-.+][0-9A-Za-z.-]+)?' \
+        | head -n1
+    )"
+    if [ -n "$match" ]; then
+      echo "$match"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+confirm_upgrade_if_needed() {
+  local target_version="$1"
+  local installed_version=""
+
+  log_step "Checking existing ${BIN_NAME} installation"
+  installed_version="$(get_installed_version || true)"
+  if [ -z "$installed_version" ]; then
+    echo "No existing ${BIN_NAME} installation detected."
+    return 0
+  fi
+
+  if is_version_newer "$target_version" "$installed_version"; then
+    confirm_install "${BIN_NAME} is already installed (version ${installed_version}). Do you want to update to ${target_version}?"
+    return 0
+  fi
+
+  if [ "$(normalize_version "$target_version")" = "$(normalize_version "$installed_version")" ]; then
+    confirm_install "${BIN_NAME} is already installed (version ${installed_version}). Do you want to reinstall ${target_version}?"
+    REINSTALL_CONFIRMED="true"
+  fi
+}
+
 install_binary() {
   local src="$1"
   local dst="${INSTALL_DIR}/${BIN_NAME}"
@@ -191,6 +285,7 @@ install_binary() {
     exit 1
   fi
 
+  log_step "Installing binary to ${dst}"
   install -m 0755 "$src" "$dst"
 }
 
@@ -219,6 +314,7 @@ ensure_path_setup() {
   fi
 
   line="case \":\$PATH:\" in *\":${INSTALL_DIR}:\"*) ;; *) export PATH=\"${INSTALL_DIR}:\$PATH\" ;; esac"
+  log_step "Adding ${INSTALL_DIR} to PATH in ${target_file}"
   append_line_if_missing "$target_file" "$line"
 }
 
@@ -298,9 +394,12 @@ install_with_package_manager() {
   fi
 
   package_file="${tmp_dir}/$(basename "$package_url")"
-  confirm_install "Install ${BIN_NAME} ${version} via ${manager} using package $(basename "$package_url")?"
-  echo "Downloading package $(basename "$package_url")..."
-  curl -fL "$package_url" -o "$package_file"
+  if [ "$REINSTALL_CONFIRMED" != "true" ]; then
+    confirm_install "Install ${BIN_NAME} ${version} via ${manager} using package $(basename "$package_url")?"
+  fi
+  log_step "Downloading package $(basename "$package_url")"
+  curl -fsSL "$package_url" -o "$package_file"
+  log_step "Installing package via ${manager}"
 
   case "$manager" in
     apt)
@@ -335,10 +434,13 @@ install_with_tar() {
   archive="${BIN_NAME}_${version}_${os}_${arch}.tar.gz"
   url="https://github.com/${REPO}/releases/download/${version}/${archive}"
 
-  confirm_install "Install ${BIN_NAME} ${version} from ${archive} to ${INSTALL_DIR}?"
-  echo "Downloading ${archive}..."
-  curl -fL "$url" -o "${tmp_dir}/${archive}"
+  if [ "$REINSTALL_CONFIRMED" != "true" ]; then
+    confirm_install "Install ${BIN_NAME} ${version} from ${archive} to ${INSTALL_DIR}?"
+  fi
+  log_step "Downloading ${archive}"
+  curl -fsSL "$url" -o "${tmp_dir}/${archive}"
 
+  log_step "Extracting ${archive}"
   tar -xzf "${tmp_dir}/${archive}" -C "$tmp_dir"
   if [ ! -f "${tmp_dir}/${BIN_NAME}" ]; then
     echo "Error: '${BIN_NAME}' was not found in archive ${archive}." >&2
@@ -348,8 +450,6 @@ install_with_tar() {
   install_binary "${tmp_dir}/${BIN_NAME}"
   ensure_path_setup
 
-  echo "Installed '${BIN_NAME}' to ${INSTALL_DIR}."
-  "${INSTALL_DIR}/${BIN_NAME}" --version 2>/dev/null || "${INSTALL_DIR}/${BIN_NAME}" version 2>/dev/null || true
   if ! path_contains_dir "$INSTALL_DIR"; then
     echo "Added ${INSTALL_DIR} to your shell profile. Restart terminal or run:"
     echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
@@ -368,12 +468,16 @@ main() {
     export PATH
   fi
 
-  local os arch version installed_path invoke_cmd
+  local os arch version invoke_cmd
   os="$(normalize_os)"
   arch="$(normalize_arch)"
+  log_step "Resolving target version"
   version="$(resolve_version)"
+  echo "Target version: ${version}"
+  confirm_upgrade_if_needed "$version"
 
   TMP_DIR="$(mktemp -d)"
+  log_step "Created temporary directory ${TMP_DIR}"
   trap cleanup_tmp_dir EXIT
 
   if [ "$INSTALL_MODE" = "pkg" ]; then
@@ -382,21 +486,18 @@ main() {
       exit 1
     fi
     install_with_package_manager "$version" "$arch" "$TMP_DIR"
-    command -v "${BIN_NAME}" >/dev/null 2>&1 && "${BIN_NAME}" --version 2>/dev/null || true
   else
     install_with_tar "$version" "$os" "$arch" "$TMP_DIR"
   fi
 
-  if installed_path="$(command -v "${BIN_NAME}" 2>/dev/null)"; then
+  if command -v "${BIN_NAME}" >/dev/null 2>&1; then
     invoke_cmd="${BIN_NAME} --help"
   else
-    installed_path="${INSTALL_DIR}/${BIN_NAME}"
-    invoke_cmd="${installed_path} --help"
+    invoke_cmd="${INSTALL_DIR}/${BIN_NAME} --help"
   fi
 
   echo
-  echo "Installation completed."
-  echo "Installed path: ${installed_path}"
+  echo "${BIN_NAME} has been installed successfully."
   echo "Run: ${invoke_cmd}"
 }
 
