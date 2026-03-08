@@ -7,6 +7,13 @@ INSTALL_DIR="${INSTALL_DIR:-}"
 INSTALL_MODE="tar"
 VERSION_INPUT="latest"
 AUTO_YES="false"
+TMP_DIR=""
+
+cleanup_tmp_dir() {
+  if [ -n "${TMP_DIR:-}" ]; then
+    rm -rf "$TMP_DIR"
+  fi
+}
 
 usage() {
   cat <<'EOF'
@@ -192,22 +199,27 @@ ensure_path_setup() {
     return 0
   fi
 
-  local shell_name line
+  local shell_name target_file line
   shell_name="$(basename "${SHELL:-}")"
-  line="export PATH=\"${INSTALL_DIR}:\$PATH\""
-
-  append_line_if_missing "${HOME}/.profile" "$line"
 
   case "$shell_name" in
     bash)
-      append_line_if_missing "${HOME}/.bashrc" "$line"
-      append_line_if_missing "${HOME}/.bash_profile" "$line"
+      target_file="${HOME}/.bashrc"
       ;;
     zsh)
-      append_line_if_missing "${HOME}/.zshrc" "$line"
-      append_line_if_missing "${HOME}/.zprofile" "$line"
+      target_file="${HOME}/.zshrc"
+      ;;
+    *)
+      target_file="${HOME}/.profile"
       ;;
   esac
+
+  if [ -f "$target_file" ] && grep -Fq "${INSTALL_DIR}" "$target_file"; then
+    return 0
+  fi
+
+  line="case \":\$PATH:\" in *\":${INSTALL_DIR}:\"*) ;; *) export PATH=\"${INSTALL_DIR}:\$PATH\" ;; esac"
+  append_line_if_missing "$target_file" "$line"
 }
 
 detect_pkg_manager() {
@@ -356,23 +368,23 @@ main() {
     export PATH
   fi
 
-  local os arch version tmp_dir installed_path invoke_cmd
+  local os arch version installed_path invoke_cmd
   os="$(normalize_os)"
   arch="$(normalize_arch)"
   version="$(resolve_version)"
 
-  tmp_dir="$(mktemp -d)"
-  trap 'rm -rf "$tmp_dir"' EXIT
+  TMP_DIR="$(mktemp -d)"
+  trap cleanup_tmp_dir EXIT
 
   if [ "$INSTALL_MODE" = "pkg" ]; then
     if [ "$os" != "linux" ]; then
       echo "Error: --pkg mode is supported only on Linux." >&2
       exit 1
     fi
-    install_with_package_manager "$version" "$arch" "$tmp_dir"
+    install_with_package_manager "$version" "$arch" "$TMP_DIR"
     command -v "${BIN_NAME}" >/dev/null 2>&1 && "${BIN_NAME}" --version 2>/dev/null || true
   else
-    install_with_tar "$version" "$os" "$arch" "$tmp_dir"
+    install_with_tar "$version" "$os" "$arch" "$TMP_DIR"
   fi
 
   if installed_path="$(command -v "${BIN_NAME}" 2>/dev/null)"; then
