@@ -6,8 +6,7 @@ run:
 	go run $(MAIN)
 
 build:
-	mkdir $(BIN_DIR)
-	go build -o $(BIN_DIR)/$(BINARY) $(MAIN)
+	go build -o $(BIN_DIR)/$(APP_NAME) $(MAIN)
 
 build-linux:
 	mkdir -p $(BIN_DIR)
