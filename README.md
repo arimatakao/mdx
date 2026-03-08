@@ -13,27 +13,6 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 </div>
 
-# Table of Contents
-
-- [mdx 📚](#mdx-)
-- [Features 💫](#features-)
-- [Installation ⚙️](#installation-)
-  - [Docker](#docker)
-  - [Android (Termux)](#android-termux)
-  - [Using in Nix/NixOS](#using-in-nixnixos)
-  - [Post-installation steps](#post-installation-steps)
-    - [Windows](#windows)
-    - [Linux](#linux)
-    - [MacOS](#macos)
-- [Usage examples 🖥️](#usage-examples-)
-- [FAQ 💬](#faq-)
-- [TODO 📌](#todo-)
-  - [Functionality](#functionality)
-  - [Code](#code)
-- [License 📜](#license-)
-- [Third-party Libraries](#third-party-libraries)
-- [Contributors 🧑‍💻](#contributors-)
-
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux, Android***.
@@ -47,52 +26,56 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 
 ## Installation ⚙️
 
-1. Download archive from [releases page](https://github.com/arimatakao/mdx/releases).
-2. Unarchive the file:
-    - On Windows, use tools like 7-Zip.
-    - On macOS and Linux, use the terminal: `tar -xzf mdx-*.tar.gz`
-3. Run the executable:
-    - On Windows, open the `cmd`, navigate to the unarchived folder, and run `.\mdx.exe`
-    - On macOS and Linux, open the terminal, navigate to the unarchived folder, and run `./mdx`
+**Download the latest release [HERE](https://github.com/arimatakao/mdx/releases)**
 
-Alternatively, you can install via `go`:
+### Windows (recommended)
 
-```
-go install github.com/arimatakao/mdx@latest
-```
+Download and run `mdx-*-windows-installer.msi`.
 
-### Docker
+### Linux
 
-1. Clone the repository:
-
+Debian/Ubuntu (`mdx_*_linux_*.deb`):
 ```sh
-git clone https://github.com/arimatakao/mdx.git
+sudo apt install ./mdx_*_linux_*.deb
 ```
 
-2. Build docker image:
-
+RHEL/Fedora (`mdx_*_linux_*.rpm`):
 ```sh
-docker build -t mdx .
+sudo dnf install ./mdx_*_linux_*.rpm
 ```
 
-Usage examples:
-
+Alpine (`mdx_*_linux_*.apk`):
 ```sh
-# Ping
-docker run --rm mdx dl ping
-# Download
-docker run --rm -v /your/download/dir:/download mdx dl -o /download <url>
-# Interactive download
-docker run --rm -it -v /your/download/dir:/download mdx dl -o /download <url>
+sudo apk add --allow-untrusted ./mdx_*_linux_*.apk
 ```
 
-Also add useful alias for your shell:
-
+Arch Linux (`mdx_*_linux_*.pkg.tar.zst`):
+```sh
+sudo pacman -U ./mdx_*_linux_*.pkg.tar.zst
 ```
-alias containermdx="docker run --rm -it -v /your/download/dir:/download mdx"
+
+### MacOS
+
+Download the macOS archive (`mdx_*_darwin_*.tar.gz`) and run:
+```sh
+tar -xzf mdx_*_darwin_*.tar.gz
+./mdx --help
 ```
 
-It allows you to run mdx anywhere in your shell using the command `containermdx`
+### Portable binaries
+
+Windows (`mdx_*_windows_*.zip`, contains `mdx.exe`):
+You can just extract the archive with File Explorer/7-Zip, or use this PowerShell command:
+```powersh
+Expand-Archive .\mdx_*_windows_*.zip -DestinationPath .\mdx
+.\mdx\mdx.exe --help
+```
+
+Linux/macOS (`mdx_*_linux_*.tar.gz`, contains `mdx`):
+```sh
+tar -xzf mdx_*_linux_*.tar.gz
+./mdx --help
+```
 
 ### Android (Termux)
 
@@ -140,56 +123,62 @@ For use `mdx` just execute:
 mdx
 ```
 
-### Using in Nix/NixOS
+### Go install
+
+```sh
+go install github.com/arimatakao/mdx@latest
+```
+
+### Nix/NixOS
 
 Using flakes to run `mdx` directly:
 ```
 nix run 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0' -- download --help
 ```
 
-Using flakes to create a temporary shell with `mdx` available on the $PATH:
+Using flakes to create a temporary sh with `mdx` available on the $PATH:
 ```
-nix shell 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0'
-```
-
-
-### Post-installation steps
-
-*This steps is optional. Perform it if you want to run `mdx` from anywhere in your terminal.*
-
-#### Windows
-
-Copy `mdx.exe` to a directory included in your `PATH` or add its directory to the `PATH`
-
-#### Linux
-
-Copy `mdx` file to `/usr/bin/`:
-
-```shell
-sudo cp mdx /usr/bin/
-# or
-sudo cp mdx /usr/local/bin/
+nix sh 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0'
 ```
 
-#### MacOS
+### Docker
 
-Add `mdx` in your `PATH`:
+1. Clone the repository:
+
+```sh
+git clone https://github.com/arimatakao/mdx.git
+```
+
+2. Build docker image:
+
+```sh
+docker build -t mdx .
+```
+
+Usage examples:
+
+```sh
+# Ping
+docker run --rm mdx dl ping
+# Download
+docker run --rm -v /your/download/dir:/download mdx dl -o /download <url>
+# Interactive download
+docker run --rm -it -v /your/download/dir:/download mdx dl -o /download <url>
+```
+
+Also add useful alias for your sh:
 
 ```
-export PATH=$PATH:</path/to/mdx>
+alias containermdx="docker run --rm -it -v /your/download/dir:/download mdx"
 ```
 
-Run `source` to restart the shell configuration:
-
-```shell
-source ~/.zshrc
-```
+It allows you to run mdx anywhere in your sh using the command `containermdx`
 
 ## Usage examples️ 🖥️
 
 Interactive downloading mode:
 
-```shell
+```sh
 mdx dl -i
 ```
 
@@ -206,7 +195,7 @@ Demo of interactive mode:
 
 Download manga:
 
-```shell
+```sh
 # get help
 mdx download --help
 
@@ -265,13 +254,13 @@ mdx dl -j mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 Check available updates:
 
-```shell
+```sh
 mdx update
 ```
 
 Get help about subcommands and flags:
 
-```shell
+```sh
 mdx
 mdx -h
 # ping subcommand is example
@@ -281,7 +270,7 @@ mdx ping -h
 
 Search manga:
 
-```shell
+```sh
 mdx find -t "Manga Title"
 mdx search -t "Manga Title"
 mdx f -t "Manga Title"
@@ -289,7 +278,7 @@ mdx f -t "Manga Title"
 
 Get detailed information about the manga:
 
-```shell
+```sh
 mdx info -u https://mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 # or
 mdx info mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
@@ -297,7 +286,7 @@ mdx info mangadex.org/title/319df2e2-e6a6-4e3a-a31c-68539c140a84/slam-dunk
 
 Check connection to MangaDex API:
 
-```shell
+```sh
 mdx ping
 ```
 
