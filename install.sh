@@ -6,6 +6,7 @@ BIN_NAME="mdx"
 INSTALL_DIR="${INSTALL_DIR:-}"
 INSTALL_MODE="tar"
 VERSION_INPUT="latest"
+AUTO_YES="false"
 
 usage() {
   cat <<'EOF'
@@ -16,6 +17,7 @@ Options:
   --pkg                Install on Linux via package manager (apt/dnf/yum/apk/pacman).
                        If package manager is missing, script exits with error.
   --tar                Force tar.gz installation mode (default).
+  -y, --yes            Skip confirmation prompt.
   -h, --help           Show this help.
 
 Examples:
@@ -49,6 +51,10 @@ parse_args() {
         usage
         exit 0
         ;;
+      -y|--yes)
+        AUTO_YES="true"
+        shift
+        ;;
       -*)
         echo "Error: unknown option '$1'." >&2
         usage
@@ -70,6 +76,33 @@ parse_args() {
   if [ "${#positional[@]}" -eq 1 ]; then
     VERSION_INPUT="${positional[0]}"
   fi
+}
+
+confirm_install() {
+  local message="$1"
+  local answer=""
+
+  if [ "$AUTO_YES" = "true" ]; then
+    return 0
+  fi
+
+  if [ -t 0 ]; then
+    read -r -p "${message} [y/N]: " answer
+  elif [ -r /dev/tty ]; then
+    read -r -p "${message} [y/N]: " answer < /dev/tty
+  else
+    echo "Error: interactive confirmation is required, but no TTY is available." >&2
+    echo "Use --yes to continue non-interactively." >&2
+    exit 1
+  fi
+
+  case "$answer" in
+    y|Y|yes|YES) ;;
+    *)
+      echo "Installation cancelled."
+      exit 0
+      ;;
+  esac
 }
 
 path_contains_dir() {
@@ -253,6 +286,7 @@ install_with_package_manager() {
   fi
 
   package_file="${tmp_dir}/$(basename "$package_url")"
+  confirm_install "Install ${BIN_NAME} ${version} via ${manager} using package $(basename "$package_url")?"
   echo "Downloading package $(basename "$package_url")..."
   curl -fL "$package_url" -o "$package_file"
 
@@ -289,6 +323,7 @@ install_with_tar() {
   archive="${BIN_NAME}_${version}_${os}_${arch}.tar.gz"
   url="https://github.com/${REPO}/releases/download/${version}/${archive}"
 
+  confirm_install "Install ${BIN_NAME} ${version} from ${archive} to ${INSTALL_DIR}?"
   echo "Downloading ${archive}..."
   curl -fL "$url" -o "${tmp_dir}/${archive}"
 
@@ -321,7 +356,7 @@ main() {
     export PATH
   fi
 
-  local os arch version tmp_dir
+  local os arch version tmp_dir installed_path invoke_cmd
   os="$(normalize_os)"
   arch="$(normalize_arch)"
   version="$(resolve_version)"
@@ -339,6 +374,18 @@ main() {
   else
     install_with_tar "$version" "$os" "$arch" "$tmp_dir"
   fi
+
+  if installed_path="$(command -v "${BIN_NAME}" 2>/dev/null)"; then
+    invoke_cmd="${BIN_NAME} --help"
+  else
+    installed_path="${INSTALL_DIR}/${BIN_NAME}"
+    invoke_cmd="${installed_path} --help"
+  fi
+
+  echo
+  echo "Installation completed."
+  echo "Installed path: ${installed_path}"
+  echo "Run: ${invoke_cmd}"
 }
 
 main "$@"
