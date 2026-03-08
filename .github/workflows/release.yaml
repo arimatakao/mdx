@@ -87,7 +87,7 @@ jobs:
         if: matrix.goos == 'linux'
         uses: burningalchemist/action-gh-nfpm@v1
         with:
-          nfpm_version: v2.45.0
+          nfpm_version: 2.45.0
           packager: deb
           config: packaging/deb.yaml
           target: dist/packages/
@@ -96,7 +96,7 @@ jobs:
         if: matrix.goos == 'linux'
         uses: burningalchemist/action-gh-nfpm@v1
         with:
-          nfpm_version: v2.45.0
+          nfpm_version: 2.45.0
           packager: rpm
           config: packaging/rpm.yaml
           target: dist/packages/
@@ -105,7 +105,7 @@ jobs:
         if: matrix.goos == 'linux'
         uses: burningalchemist/action-gh-nfpm@v1
         with:
-          nfpm_version: v2.45.0
+          nfpm_version: 2.45.0
           packager: apk
           config: packaging/apk.yaml
           target: dist/packages/
@@ -114,7 +114,7 @@ jobs:
         if: matrix.goos == 'linux'
         uses: burningalchemist/action-gh-nfpm@v1
         with:
-          nfpm_version: v2.45.0
+          nfpm_version: 2.45.0
           packager: archlinux
           config: packaging/archlinux.yaml
           target: dist/packages/
