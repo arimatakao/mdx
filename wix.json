@@ -1,0 +1,43 @@
+{
+  "product": "mdx",
+  "company": "arimatakao",
+  "license": "LICENSE",
+  "upgrade-code": "d992130b-c95d-4c07-a0dc-d4f4cb7f0e25",
+  "files": {
+    "guid": "",
+    "items": [
+      "application/mdx.exe"
+    ]
+  },
+  "env": {
+    "guid": "",
+    "vars": [
+      {
+        "name": "PATH",
+        "value": "[INSTALLDIR]",
+        "permanent": "no",
+        "system": "no",
+        "action": "set",
+        "part": "last"
+      }
+    ]
+  },
+  "shortcuts": {
+    "guid": "",
+    "items": [
+      {
+        "name": "mdx",
+        "description": "MangaDex CLI downloader",
+        "target": "[INSTALLDIR]\\mdx.exe",
+        "wdir": "INSTALLDIR",
+        "arguments": "",
+        "icon": ""
+      }
+    ]
+  },
+  "choco": {
+    "description": "CLI application for downloading manga from MangaDex",
+    "tags": "mdx mangadex cli",
+    "license-url": "https://opensource.org/licenses/MIT"
+  }
+}
