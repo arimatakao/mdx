@@ -154,10 +154,25 @@ jobs:
       - name: Install go-msi
         run: choco install -y "go-msi"
 
+      - name: Prepare MSI metadata
+        id: msi_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "msi_version=${GITHUB_REF_NAME#v}" >> "${GITHUB_OUTPUT}"
+
       - name: Build Windows Installer MSI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p application
+          cp "dist/windows-amd64/mdx.exe" "application/mdx.exe"
+
+      - name: Create Windows Installer MSI
         uses: AliceOh/CreateWindowsInstaller@1.0.0
         with:
           exefile: dist/windows-amd64/mdx.exe
+          version: ${{ steps.msi_meta.outputs.msi_version }}
 
       - name: Rename MSI
         shell: bash
