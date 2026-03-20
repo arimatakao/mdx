@@ -1,7 +1,7 @@
 {
   lib,
   buildGoModule,
-  go,
+  go_1_26 ? null,
 }:
 let
   inherit (builtins)
@@ -18,8 +18,13 @@ let
   metaGo = readFile ../app/meta.go;
   metaGoLines = filter (x: !(isList x)) (split "[[:space:]]+" metaGo);
   version = head (flatten (filter (x: !(isNull x)) (map (x: match ''"v([.0-9]+)"'' x) metaGoLines)));
+  goBuilder =
+    if go_1_26 != null then
+      buildGoModule.override { go = go_1_26; }
+    else
+      buildGoModule;
 in
-buildGoModule {
+goBuilder {
   pname = "mdx";
   version = version;
 
@@ -27,8 +32,6 @@ buildGoModule {
     name = "mdx-source";
     path = ./..;
   };
-
-  nativeBuildInputs = [ go ];
 
   vendorHash = "sha256-r3XvQr4Uzxt04hnmI4CeBumu1Fg7dMsW6THTI4ah3Eo=";
 
