@@ -33,7 +33,7 @@ goBuilder {
     path = ./..;
   };
 
-  vendorHash = "sha256-r3XvQr4Uzxt04hnmI4CeBumu1Fg7dMsW6THTI4ah3Eo=";
+  vendorHash = "sha256-X2SyY1yOFGsPRv/1DhJqAZ4o2Lrf+bfHkDXFBQNJ/5I=";
 
   # test suite requires network
   doCheck = false;
