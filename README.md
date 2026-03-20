@@ -398,7 +398,7 @@ Sometimes it doesn't download because of some problems on the MangaDex side. Jus
     - [X] `volume-bundle` - download all chapters of volume into one file.
     - [ ] `oneshot` - download all oneshots of manga (if available).
 - [X] Add interactive mode for `download` subcommand.
-- [ ] Add self update mechanism.
+- [X] Add self update mechanism. (user should execute script for manual update)
 - [ ] Add search filter for `find` subcommand.
 - [ ] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] ~~Add interactive mode for `find` subcommand.~~ (already added into `download` subcommand)
@@ -408,7 +408,7 @@ Sometimes it doesn't download because of some problems on the MangaDex side. Jus
 - [X] Use `pterm` output instead `fmt`.
 - [X] Refactor `cmd` package.
 - [X] Add rate limiter for client api.
-- [ ] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
+- [X] Create a Github action to automate the creation of `.deb` `.rpm` `.pkg.tar.zst` packages when a new release is created.
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `internal/mdx` package.
 - [ ] Refactor `mangadexapi` package.
