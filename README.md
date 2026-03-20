@@ -171,14 +171,22 @@ go install github.com/arimatakao/mdx@latest
 
 ### Nix/NixOS
 
-Using flakes to run `mdx` directly:
-```
-nix run 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0' -- download --help
+Using flakes to run `mdx` directly from the default branch:
+
+```sh
+nix run github:arimatakao/mdx -- download --help
 ```
 
-Using flakes to create a temporary sh with `mdx` available on the $PATH:
+Using flakes to create a temporary shell with `mdx` available on the `$PATH`:
+
+```sh
+nix shell github:arimatakao/mdx
 ```
-nix sh 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.11.0'
+
+Using a pinned tag for reproducible installs:
+
+```sh
+nix run 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.14.0' -- download --help
 ```
 
 ### Docker
