@@ -2,6 +2,7 @@ package mdx
 
 import (
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -65,11 +66,24 @@ func CheckUpdate() {
 	}
 	pterm.DefaultTable.WithData(tableData).Render()
 	if isShouldUpdate {
-		field.Print("Download new version here: ")
-		dp.Println("https://github.com/arimatakao/mdx/releases")
-		field.Println("Release description:")
-		dp.Println(result.Description)
+		if updateCmd := getUpdateCommand(); updateCmd != "" {
+			field.Println("Run this command to update to the latest version:")
+			dp.Println(updateCmd)
+		}
 	} else {
 		field.Print("You have latest version.\n")
+	}
+}
+
+func getUpdateCommand() string {
+	switch runtime.GOOS {
+	case "windows":
+		return `powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/arimatakao/mdx/main/install.ps1 | iex"`
+	case "darwin", "linux":
+		return "curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash"
+	case "android":
+		return "bash <(curl -s https://raw.githubusercontent.com/arimatakao/mdx/main/android_installation.sh)"
+	default:
+		return ""
 	}
 }
