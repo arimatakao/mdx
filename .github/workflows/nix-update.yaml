@@ -1,0 +1,57 @@
+name: Nix Update
+
+on:
+  push:
+    tags:
+      - "nixupdate-*"
+
+permissions:
+  contents: write
+
+jobs:
+  nix-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Update flake.lock
+        run: nix flake update
+
+      - name: Recompute vendorHash
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's|vendorHash = "sha256-[^"]*";|vendorHash = lib.fakeHash;|' nix/default.nix
+
+          LOG="$(mktemp)"
+          if nix build .#mdx > /dev/null 2>"$LOG"; then
+            echo "Build succeeded unexpectedly with fake hash"
+            exit 1
+          fi
+
+          NEW_HASH="$(sed -n 's/.*got:[[:space:]]*\(sha256-[A-Za-z0-9+/=.-]*\).*/\1/p' "$LOG" | tail -n1)"
+          test -n "$NEW_HASH"
+
+          sed -i "s|vendorHash = lib.fakeHash;|vendorHash = \"$NEW_HASH\";|" nix/default.nix
+
+      - name: Verify
+        run: nix build .#mdx
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.lock nix/default.nix
+          git commit -m "chore(nix): update flake.lock and vendorHash"
+          git push origin HEAD:main
