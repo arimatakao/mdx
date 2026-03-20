@@ -2,9 +2,8 @@ package metadata
 
 import (
 	"encoding/xml"
+	"fmt"
 	"time"
-
-	"github.com/pterm/pterm"
 )
 
 type Metadata struct {
@@ -102,7 +101,7 @@ func NewMetadata(appId string, m MangaProvider, c ChapterProvider) Metadata {
 		credits = append(credits, credit)
 	}
 
-	mangaTitle := pterm.Sprintf("%s | %s vol%s ch%s",
+	mangaTitle := fmt.Sprintf("%s | %s vol%s ch%s",
 		c.Language(), m.Title("en"), c.Volume(), c.Number())
 
 	mangaDescription := m.Description("en") + "<br>Read or Buy here:<br>"

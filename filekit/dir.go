@@ -1,12 +1,12 @@
 package filekit
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/arimatakao/mdx/filekit/metadata"
-	"github.com/pterm/pterm"
 )
 
 type dirContainer struct {
@@ -58,7 +58,7 @@ func (d *dirContainer) WriteOnDiskAndClose(outputDir, outputFileName string,
 }
 
 func (d *dirContainer) AddFile(fileExt string, imageBytes []byte) error {
-	fileName := pterm.Sprintf("%02d.%s", d.pageIndex, fileExt)
+	fileName := fmt.Sprintf("%02d.%s", d.pageIndex, fileExt)
 	filePath := filepath.Join(d.tempDir, fileName)
 	if err := os.WriteFile(filePath, imageBytes, os.ModePerm); err != nil {
 		return err
