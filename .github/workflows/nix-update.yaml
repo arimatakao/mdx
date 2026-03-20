@@ -34,24 +34,39 @@ jobs:
             exit 1
           fi
 
-          NEW_HASH="$(sed -n 's/.*got:[[:space:]]*\(sha256-[A-Za-z0-9+/=.-]*\).*/\1/p' "$LOG" | tail -n1)"
-          test -n "$NEW_HASH"
+          NEW_HASH="$(awk '/got:[[:space:]]/{for(i=1;i<=NF;i++) if($i ~ /^sha256-/) print $i}' "$LOG" | tail -n1)"
+          if [ -z "$NEW_HASH" ]; then
+            echo "Could not parse vendor hash from nix output:"
+            cat "$LOG"
+            exit 1
+          fi
 
           sed -i "s|vendorHash = lib.fakeHash;|vendorHash = \"$NEW_HASH\";|" nix/default.nix
 
       - name: Verify
         run: nix build .#mdx
 
-      - name: Commit and push
+      - name: Check changes
+        id: check_changes
         shell: bash
         run: |
-          set -euo pipefail
           if git diff --quiet; then
-            echo "No changes"
-            exit 0
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add flake.lock nix/default.nix
-          git commit -m "chore(nix): update flake.lock and vendorHash"
-          git push origin HEAD:main
+
+      - name: Commit and push
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: actions-js/push@v1.5
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          message: "chore(nix): update flake.lock and vendorHash"
+          branch: main
+          rebase: true
+          directory: .
+          empty: false
+      - name: No changes
+        if: steps.check_changes.outputs.has_changes != 'true'
+        shell: bash
+        run: echo "No changes"
