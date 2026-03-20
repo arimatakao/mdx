@@ -16,10 +16,13 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux, Android***.
-- Downloads ***multiple chapters***.
-- Saves manga in ***CBZ, PDF, EPUB formats***.
+- No dependencies required: distributed as a ***single small executable file*** with easy installation scripts for ***Windows, macOS, and Linux***.
+- Works without a ***MangaDex account***.
+- ***Interactive downloading mode*** for convenient use.
+- Supports downloading chapters by ***language and translation group***.
+- Downloads ***multiple chapters with a single command***.
+- Saves manga in ***CBZ, PDF, EPUB formats*** or as a simple ***folder of images***.
 - Saves multiple chapters in ***one file***.
-- ***Interactive downloading mode***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Searches manga.
 - Displays information about manga.
