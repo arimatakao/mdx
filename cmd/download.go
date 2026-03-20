@@ -46,7 +46,7 @@ func init() {
 	downloadCmd.Flags().StringVarP(&mangaChapterUrl,
 		"this", "s", "", "specify the direct URL to a specific chapter")
 	downloadCmd.Flags().StringVarP(&outputExt,
-		"ext", "e", "pdf", "choose output file format: pdf cbz epub")
+		"ext", "e", "pdf", "choose output file format: pdf cbz epub dir")
 	downloadCmd.Flags().StringVarP(&outputDir,
 		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVarP(&language,

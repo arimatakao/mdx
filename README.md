@@ -391,7 +391,7 @@ Sometimes it doesn't download because of some problems on the MangaDex side. Jus
     - [X] `extension` - sets the extension of the output file. Add file support formats:
         - [X] pdf (include metadata).
         - [X] epub (include metadata).
-        - [ ] directory (folder with images).
+        - [X] directory (folder with images).
     - [X] `all` - download all chapters.
     - [X] `volume` - download all chapters of specified volume.
     - [X] `volume-range` - download all chapters of specified volume range.

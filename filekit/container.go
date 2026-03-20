@@ -14,6 +14,7 @@ const (
 	CBZ_EXT  = "cbz"
 	PDF_EXT  = "pdf"
 	EPUB_EXT = "epub"
+	DIR_EXT  = "dir"
 )
 
 var ErrExtensionNotSupport = errors.New("extension container is not supported")
@@ -21,7 +22,8 @@ var ErrExtensionNotSupport = errors.New("extension container is not supported")
 func IsNotSupported(fileFormat string) bool {
 	return fileFormat != CBZ_EXT &&
 		fileFormat != PDF_EXT &&
-		fileFormat != EPUB_EXT
+		fileFormat != EPUB_EXT &&
+		fileFormat != DIR_EXT
 }
 
 type Container interface {
@@ -38,23 +40,15 @@ func NewContainer(extension string) (Container, error) {
 		return newPdfFile()
 	case EPUB_EXT:
 		return newEpubArchive()
+	case DIR_EXT:
+		return newDirContainer()
 	}
 
 	return nil, ErrExtensionNotSupport
 }
 
 func safeOutputPath(outputDir, outputFileName, extension string) string {
-	// unix
-	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
-	// windows
-	outputFileName = strings.ReplaceAll(outputFileName, "<", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, ">", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, ":", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, `"`, "_")
-	outputFileName = strings.ReplaceAll(outputFileName, "?", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, "*", "_")
-	outputFileName = strings.ReplaceAll(outputFileName, "|", "-")
+	outputFileName = safeOutputName(outputFileName)
 
 	outputPath := filepath.Join(outputDir, outputFileName+"."+extension)
 
@@ -67,4 +61,35 @@ func safeOutputPath(outputDir, outputFileName, extension string) string {
 			pterm.Sprintf("%s (%d).%s", outputFileName, count, extension))
 	}
 	return outputPath
+}
+
+func safeOutputDirPath(outputDir, outputFileName string) string {
+	outputFileName = safeOutputName(outputFileName)
+
+	outputPath := filepath.Join(outputDir, outputFileName)
+
+	for count := 1; ; count++ {
+		_, err := os.Stat(outputPath)
+		if errors.Is(err, os.ErrNotExist) {
+			break
+		}
+		outputPath = filepath.Join(outputDir,
+			pterm.Sprintf("%s (%d)", outputFileName, count))
+	}
+	return outputPath
+}
+
+func safeOutputName(outputFileName string) string {
+	// unix
+	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
+	// windows
+	outputFileName = strings.ReplaceAll(outputFileName, "<", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, ">", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, ":", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, `"`, "_")
+	outputFileName = strings.ReplaceAll(outputFileName, "?", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, "*", "_")
+	outputFileName = strings.ReplaceAll(outputFileName, "|", "-")
+	return outputFileName
 }

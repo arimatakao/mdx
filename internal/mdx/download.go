@@ -452,13 +452,16 @@ func toSavingOptions(isVolume bool) []string {
 	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 1, filekit.CBZ_EXT))
 	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 2, filekit.PDF_EXT))
 	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 3, filekit.EPUB_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 4, filekit.DIR_EXT))
 	if !isVolume {
-		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 4,
-			filekit.CBZ_EXT+" + merge chapters in one file"))
 		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 5,
-			filekit.PDF_EXT+" + merge chapters in one file"))
+			filekit.CBZ_EXT+" + merge chapters in one file"))
 		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 6,
+			filekit.PDF_EXT+" + merge chapters in one file"))
+		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 7,
 			filekit.EPUB_EXT+" + merge chapters in one file"))
+		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 8,
+			filekit.DIR_EXT+" + merge chapters in one file"))
 	}
 	return options
 }
@@ -482,11 +485,15 @@ func getSavingOption(option string) (string, bool) {
 	case 3:
 		return filekit.EPUB_EXT, false
 	case 4:
-		return filekit.CBZ_EXT, true
+		return filekit.DIR_EXT, false
 	case 5:
-		return filekit.PDF_EXT, true
+		return filekit.CBZ_EXT, true
 	case 6:
+		return filekit.PDF_EXT, true
+	case 7:
 		return filekit.EPUB_EXT, true
+	case 8:
+		return filekit.DIR_EXT, true
 	default:
 		return filekit.CBZ_EXT, false
 	}
