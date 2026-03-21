@@ -1,4 +1,5 @@
 bin
+api.yaml
 *.bin
 .vscode
 *.pdf
