@@ -6,21 +6,10 @@ NFPM?=nfpm
 GOARCH?=amd64
 MDX_VERSION?=v9.9.9
 
-.PHONY: explain run build build-linux build-macos-amd64 build-macos-arm64 build-windows-amd64 build-windows-arm64 install clean build-linux-bin package-deb package-rpm package-apk package-archlinux package-linux
+.PHONY: explain run build build-linux build-macos-amd64 build-macos-arm64 build-windows-amd64 build-windows-arm64 install clean build-linux-bin package-deb package-rpm package-apk package-archlinux package-linux get_api
 
 explain:
-	@echo "Makefile for $(APP_NAME)"
-	@echo ""
-	@echo "Variables:"
-	@echo "  APP_NAME    - binary name (default: $(APP_NAME))"
-	@echo "  MAIN        - entrypoint (default: $(MAIN))"
-	@echo "  BIN_DIR     - build output directory (default: $(BIN_DIR))"
-	@echo "  DIST_DIR    - package output directory (default: $(DIST_DIR))"
-	@echo "  NFPM        - nfpm executable (default: $(NFPM))"
-	@echo "  GOARCH      - linux arch for build-linux-bin/package-* (default: $(GOARCH))"
-	@echo "  MDX_VERSION - version for linux packages (default: $(MDX_VERSION))"
-	@echo ""
-	@echo "Main targets:"
+	@echo "  make get_api             - download api.yaml from MangaDex docs"
 	@echo "  make run                 - run app with go run"
 	@echo "  make build               - local build to $(BIN_DIR)/$(APP_NAME)"
 	@echo "  make build-linux         - linux amd64 binary"
@@ -76,3 +65,6 @@ install:
 
 clean:
 	rm -rf bin
+
+get_api:
+	curl -fsSL -o api.yaml https://api.mangadex.org/docs/static/api.yaml
