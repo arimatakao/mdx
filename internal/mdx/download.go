@@ -165,6 +165,19 @@ func (p dlParam) RunDownload(mangaId, chapterId string) {
 			os.Exit(1)
 		}
 		chapterInfo := resp.GetChapterInfo()
+
+		// Populate manga info for filename and metadata when downloading by chapter URL.
+		mangaId := chapterInfo.GetMangaId()
+		if mangaId != "" {
+			mangaResp, err := client.GetMangaInfo(mangaId)
+			if err != nil {
+				spinnerChapInfo.Fail("Failed to get chapter info")
+				e.Printf("While getting manga info for chapter: %v\n", err)
+				os.Exit(1)
+			}
+			p.mangaInfo = mangaResp.MangaInfo()
+		}
+
 		chapterFullInfo, err := client.GetChapterImagesInFullInfo(chapterInfo)
 		if err != nil {
 			spinnerChapInfo.Fail("Failed to get chapter info")

@@ -2,6 +2,7 @@ package mangadexapi
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -64,7 +65,24 @@ type MangaInfo struct {
 }
 
 func (mi MangaInfo) Title(language string) string {
-	return mi.Attributes.Title[language]
+	if title, ok := mi.Attributes.Title[language]; ok && title != "" {
+		return title
+	}
+	if title, ok := mi.Attributes.Title["en"]; ok && title != "" {
+		return title
+	}
+
+	langs := make([]string, 0, len(mi.Attributes.Title))
+	for lang := range mi.Attributes.Title {
+		langs = append(langs, lang)
+	}
+	slices.Sort(langs)
+	for _, lang := range langs {
+		if title := mi.Attributes.Title[lang]; title != "" {
+			return title
+		}
+	}
+	return ""
 }
 
 func (mi MangaInfo) AltTitles() string {
