@@ -411,7 +411,7 @@ Sometimes it doesn't download because of some problems on the MangaDex side. Jus
 - [X] Add interactive mode for `download` subcommand.
 - [X] Add self update mechanism. (user should execute script for manual update)
 - [ ] Add search filter for `find` subcommand.
-- [ ] Add flag `random` in `info` subcommand to get information about random manga.
+- [X] Add flag `random` in `info` subcommand to get information about random manga.
 - [ ] ~~Add interactive mode for `find` subcommand.~~ (already added into `download` subcommand)
 
 ### Code
