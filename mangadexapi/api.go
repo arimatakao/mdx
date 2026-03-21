@@ -17,6 +17,7 @@ const (
 	base_url                   = "https://api.mangadex.org"
 	health_path                = "/ping"
 	manga_path                 = "/manga"
+	random_manga_path          = "/manga/random"
 	specific_manga_path        = "/manga/{id}"
 	manga_feed_path            = "/manga/{id}/feed"
 	chapter_info_path          = "/chapter/{id}"
@@ -193,6 +194,27 @@ func (a Clientapi) GetMangaInfo(mangaId string) (MangaInfoResponse, error) {
 		SetPathParam("id", mangaId).
 		SetQueryString("includes[]=author&includes[]=artist").
 		Get(specific_manga_path)
+	if err != nil {
+		return MangaInfoResponse{}, ErrConnection
+	}
+
+	if resp.IsError() {
+		return MangaInfoResponse{}, &respErr
+	}
+
+	return info, nil
+}
+
+// GetRandomMangaInfo retrieves information about a random manga.
+func (a Clientapi) GetRandomMangaInfo() (MangaInfoResponse, error) {
+	info := MangaInfoResponse{}
+	respErr := ErrorResponse{}
+
+	resp, err := a.c.R().
+		SetError(&respErr).
+		SetResult(&info).
+		SetQueryString("includes[]=author&includes[]=artist").
+		Get(random_manga_path)
 	if err != nil {
 		return MangaInfoResponse{}, ErrConnection
 	}

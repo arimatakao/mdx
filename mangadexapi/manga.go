@@ -13,7 +13,7 @@ type MangaTag struct {
 	Type       string `json:"type"`
 	Attributes struct {
 		Name        map[string]string `json:"name"`
-		Description struct{}          `json:"description"`
+		Description interface{}       `json:"description"`
 		Group       string            `json:"group"`
 		Version     int               `json:"version"`
 	} `json:"attributes"`
@@ -27,11 +27,11 @@ type MangaAttrib struct {
 	IsLocked                       bool                `json:"isLocked"`
 	Links                          map[string]string   `json:"links"`
 	OriginalLanguage               string              `json:"originalLanguage"`
-	LastVolume                     string              `json:"lastVolume"`
-	LastChapter                    string              `json:"lastChapter"`
-	PublicationDemographic         string              `json:"publicationDemographic"`
+	LastVolume                     *string             `json:"lastVolume"`
+	LastChapter                    *string             `json:"lastChapter"`
+	PublicationDemographic         *string             `json:"publicationDemographic"`
 	Status                         string              `json:"status"`
-	Year                           int                 `json:"year"`
+	Year                           *int                `json:"year"`
 	ContentRating                  string              `json:"contentRating"`
 	Tags                           []MangaTag          `json:"tags"`
 	State                          string              `json:"state"`
@@ -118,11 +118,17 @@ func (mi MangaInfo) ArtistsArr() []string {
 }
 
 func (mi MangaInfo) Publisher() string {
-	return mi.Attributes.PublicationDemographic
+	if mi.Attributes.PublicationDemographic == nil {
+		return ""
+	}
+	return *mi.Attributes.PublicationDemographic
 }
 
 func (mi MangaInfo) Year() int {
-	return mi.Attributes.Year
+	if mi.Attributes.Year == nil {
+		return 0
+	}
+	return *mi.Attributes.Year
 }
 
 func (mi MangaInfo) Status() string {
