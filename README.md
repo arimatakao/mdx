@@ -186,7 +186,7 @@ nix shell github:arimatakao/mdx
 Using a pinned tag for reproducible installs:
 
 ```sh
-nix run 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.15.0' -- download --help
+nix run 'git+https://github.com/arimatakao/mdx?ref=refs/tags/v1.15.1' -- download --help
 ```
 
 ### Docker
