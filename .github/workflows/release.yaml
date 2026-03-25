@@ -26,7 +26,7 @@ jobs:
     needs: create-release
     strategy:
       matrix:
-        goos: [linux, windows, darwin]
+        goos: [linux, darwin]
         goarch: ["386", amd64, arm64]
         exclude:
           - goarch: "386"
@@ -52,25 +52,12 @@ jobs:
           ARCHIVE_BASE="mdx_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}"
           mkdir -p "${TARGET_DIR}"
 
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            BIN_NAME="${BIN_NAME}.exe"
-            ARCHIVE_NAME="${ARCHIVE_BASE}.zip"
-          else
-            ARCHIVE_NAME="${ARCHIVE_BASE}.tar.gz"
-          fi
+          ARCHIVE_NAME="${ARCHIVE_BASE}.tar.gz"
 
           CGO_ENABLED=0 GOOS="${{ matrix.goos }}" GOARCH="${{ matrix.goarch }}" go build -o "${TARGET_DIR}/${BIN_NAME}" ./
           cp LICENSE README.md "${TARGET_DIR}/"
 
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            (
-              cd "${TARGET_DIR}"
-              zip -r "${ARCHIVE_NAME}" "${BIN_NAME}" LICENSE README.md
-            )
-            mv "${TARGET_DIR}/${ARCHIVE_NAME}" "dist/${ARCHIVE_NAME}"
-          else
-            tar -C "${TARGET_DIR}" -czf "dist/${ARCHIVE_NAME}" "${BIN_NAME}" LICENSE README.md
-          fi
+          tar -C "${TARGET_DIR}" -czf "dist/${ARCHIVE_NAME}" "${BIN_NAME}" LICENSE README.md
 
           echo "archive_name=${ARCHIVE_NAME}" >> "${GITHUB_OUTPUT}"
 
@@ -128,28 +115,72 @@ jobs:
             dist/packages/*
           if-no-files-found: error
 
-  build-windows-msi-installer:
-    name: Build Windows MSI
+  build-windows-artifacts:
+    name: Build and Sign Windows Artifacts
     runs-on: windows-latest
-    needs: build-artifacts
+    needs: create-release
     steps:
       - uses: actions/checkout@v6.0.0
 
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v8.0.0
+      - name: Setup Go
+        uses: actions/setup-go@v6.3.0
         with:
-          name: release-windows-amd64
-          path: dist/windows-amd64
+          go-version-file: 'go.mod'
+          cache-dependency-path: 'go.sum'
 
-      - name: Extract Windows binary
+      - name: Build Windows binary
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ github.ref_name }}"
           TARGET_DIR="dist/windows-amd64"
-          ARCHIVE_NAME="mdx_${VERSION}_windows_amd64.zip"
-          cd "${TARGET_DIR}"
-          unzip -o "${ARCHIVE_NAME}"
+          mkdir -p "${TARGET_DIR}"
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o "${TARGET_DIR}/mdx.exe" ./
+          cp LICENSE README.md "${TARGET_DIR}/"
+
+      - name: Decode signing password
+        id: decode_signing_password
+        shell: powershell
+        run: |
+          $password = [Text.Encoding]::UTF8.GetString(
+            [Convert]::FromBase64String("${{ secrets.WINDOWS_CERT_PASSWORD_B64 }}")
+          )
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "password=$password"
+
+      - name: Sign Windows artifacts
+        uses: skymatic/code-sign-action@v3
+        with:
+          certificate: ${{ secrets.WINDOWS_CERT_PFX_B64 }}
+          password: ${{ steps.decode_signing_password.outputs.password }}
+          certificatesha1: ${{ secrets.WINDOWS_CERT_SHA1 }}
+          description: >-
+            mdx is a command-line interface program for downloading manga from the
+            MangaDex - https://mangadex.org . The program uses MangaDex API
+            (https://api.mangadex.org/docs) to fetch manga content.
+          timestampUrl: http://timestamp.digicert.com
+          folder: dist/windows-amd64
+
+      - name: Verify signature
+        shell: powershell
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          & $signtool verify /pa /v dist/windows-amd64/mdx.exe
+
+      - name: Package signed Windows zip
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}"
+          $targetDir = "dist/windows-amd64"
+          $archiveName = "mdx_${version}_windows_amd64.zip"
+          Push-Location $targetDir
+          try {
+            Compress-Archive -Path "mdx.exe", "LICENSE", "README.md" -DestinationPath "..\$archiveName" -Force
+          }
+          finally {
+            Pop-Location
+          }
 
       - name: Install go-msi
         run: choco install -y "go-msi"
@@ -182,11 +213,13 @@ jobs:
           VERSION="${{ github.ref_name }}"
           mv "${TARGET_DIR}/mdx.exe.msi" "${TARGET_DIR}/mdx-${VERSION}-windows-installer.msi"
 
-      - name: Upload MSI Artifact
+      - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v7.0.0
         with:
-          name: release-windows-msi-amd64
-          path: dist/windows-amd64/mdx-${{ github.ref_name }}-windows-installer.msi
+          name: release-windows-amd64
+          path: |
+            dist/mdx_${{ github.ref_name }}_windows_amd64.zip
+            dist/windows-amd64/mdx-${{ github.ref_name }}-windows-installer.msi
           if-no-files-found: error
 
   upload-assets:
@@ -195,7 +228,7 @@ jobs:
     needs:
       - create-release
       - build-artifacts
-      - build-windows-msi-installer
+      - build-windows-artifacts
     steps:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8.0.0
