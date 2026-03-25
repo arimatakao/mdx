@@ -10,3 +10,8 @@ linuxpackages
 *.rpm
 *.apk
 *.pkg.tar.zst
+
+
+*.key
+*.crt
+*.pfx
