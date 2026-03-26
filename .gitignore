@@ -15,3 +15,5 @@ linuxpackages
 *.key
 *.crt
 *.pfx
+
+linux-signing
