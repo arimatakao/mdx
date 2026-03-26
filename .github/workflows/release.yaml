@@ -70,6 +70,46 @@ jobs:
           echo "MDX_VERSION=${GITHUB_REF_NAME#v}" >> "${GITHUB_ENV}"
           echo "GOARCH=${{ matrix.goarch }}" >> "${GITHUB_ENV}"
 
+      - name: Prepare Linux signing keys
+        if: matrix.goos == 'linux'
+        shell: bash
+        env:
+          LINUX_GPG_PRIVATE_KEY_B64: ${{ secrets.LINUX_GPG_PRIVATE_KEY_B64 }}
+          LINUX_GPG_PASSPHRASE_B64: ${{ secrets.LINUX_GPG_PASSPHRASE_B64 }}
+          LINUX_GPG_KEY_ID: ${{ secrets.LINUX_GPG_KEY_ID }}
+          LINUX_DEB_SIGNER: ${{ secrets.LINUX_DEB_SIGNER }}
+          LINUX_APK_PRIVATE_KEY_B64: ${{ secrets.LINUX_APK_PRIVATE_KEY_B64 }}
+          LINUX_APK_PASSPHRASE_B64: ${{ secrets.LINUX_APK_PASSPHRASE_B64 }}
+          LINUX_APK_KEY_NAME: ${{ secrets.LINUX_APK_KEY_NAME }}
+        run: |
+          set -euo pipefail
+          signing_dir="${RUNNER_TEMP}/linux-signing"
+          mkdir -p "${signing_dir}"
+
+          printf '%s' "${LINUX_GPG_PRIVATE_KEY_B64}" | base64 --decode > "${signing_dir}/linux-signing.gpg"
+          printf '%s' "${LINUX_APK_PRIVATE_KEY_B64}" | base64 --decode > "${signing_dir}/linux-signing.rsa"
+          chmod 600 "${signing_dir}/linux-signing.gpg" "${signing_dir}/linux-signing.rsa"
+
+          gpg_passphrase="$(printf '%s' "${LINUX_GPG_PASSPHRASE_B64}" | base64 --decode)"
+          apk_passphrase="$(printf '%s' "${LINUX_APK_PASSPHRASE_B64}" | base64 --decode)"
+          echo "::add-mask::${gpg_passphrase}"
+          echo "::add-mask::${apk_passphrase}"
+
+          {
+            echo "NFPM_DEB_KEY_FILE=${signing_dir}/linux-signing.gpg"
+            echo "NFPM_DEB_KEY_ID=${LINUX_GPG_KEY_ID}"
+            echo "NFPM_DEB_SIGNER=${LINUX_DEB_SIGNER}"
+            echo "NFPM_DEB_PASSPHRASE=${gpg_passphrase}"
+            echo "NFPM_RPM_KEY_FILE=${signing_dir}/linux-signing.gpg"
+            echo "NFPM_RPM_KEY_ID=${LINUX_GPG_KEY_ID}"
+            echo "NFPM_RPM_PASSPHRASE=${gpg_passphrase}"
+            echo "NFPM_APK_KEY_FILE=${signing_dir}/linux-signing.rsa"
+            echo "NFPM_APK_KEY_NAME=${LINUX_APK_KEY_NAME}"
+            echo "NFPM_APK_PASSPHRASE=${apk_passphrase}"
+            echo "ARCH_GPG_KEY_FILE=${signing_dir}/linux-signing.gpg"
+            echo "ARCH_GPG_PASSPHRASE=${gpg_passphrase}"
+          } >> "${GITHUB_ENV}"
+
       - name: Create deb package
         if: matrix.goos == 'linux'
         uses: burningalchemist/action-gh-nfpm@v1
@@ -105,6 +145,31 @@ jobs:
           packager: archlinux
           config: packaging/archlinux.yaml
           target: dist/packages/
+
+      - name: Import Arch Linux signing key
+        if: matrix.goos == 'linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GNUPGHOME="${RUNNER_TEMP}/gnupg"
+          mkdir -p "${GNUPGHOME}"
+          chmod 700 "${GNUPGHOME}"
+          gpg --batch --import "${ARCH_GPG_KEY_FILE}"
+
+      - name: Sign Arch Linux packages
+        if: matrix.goos == 'linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GNUPGHOME="${RUNNER_TEMP}/gnupg"
+          shopt -s nullglob
+          for package in dist/packages/*.pkg.tar.zst; do
+            gpg --batch --yes --pinentry-mode loopback \
+              --passphrase "${ARCH_GPG_PASSPHRASE}" \
+              --detach-sign \
+              --output "${package}.sig" \
+              "${package}"
+          done
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7.0.0

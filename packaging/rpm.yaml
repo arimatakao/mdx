@@ -19,3 +19,6 @@ contents:
 
 rpm:
   compression: zstd
+  signature:
+    key_file: ${NFPM_RPM_KEY_FILE}
+    key_id: ${NFPM_RPM_KEY_ID}

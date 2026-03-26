@@ -15,3 +15,7 @@ contents:
     dst: /usr/bin/mdx
     file_info:
       mode: 0755
+apk:
+  signature:
+    key_file: ${NFPM_APK_KEY_FILE}
+    key_name: ${NFPM_APK_KEY_NAME}
