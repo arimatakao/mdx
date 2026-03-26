@@ -20,9 +20,3 @@ contents:
 
 deb:
   compression: xz
-  signature:
-    method: debsign
-    key_file: ${NFPM_DEB_KEY_FILE}
-    key_id: ${NFPM_DEB_KEY_ID}
-    signer: ${NFPM_DEB_SIGNER}
-    type: origin
