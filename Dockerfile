@@ -1,5 +1,5 @@
 # Use the official Golang image as the build environment
-FROM golang:1.22.4-alpine AS builder
+FROM golang:1.26.1-alpine AS builder
 
 # Install git (required for Go modules)
 RUN apk add --no-cache git
