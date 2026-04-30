@@ -293,6 +293,22 @@ mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # specify the output directory
 mdx dl -o your/dir mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
+# specify output file name template
+# %1 language, %2 translator, %3 manga title, %4 volume, %5 chapter/range, %6 chapter title
+mdx dl --file-name "%3 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# include custom static text
+mdx dl --file-name "YourTextHere ch. %5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# include volume number
+mdx dl --file-name "%3 vol.%4 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# include language and translator
+mdx dl --file-name "[%1 %2] %3 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# include chapter title
+mdx dl --file-name "%3 ch.%5 - %6" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# merged chapters use %5 as chapter range
+mdx dl -m -c 1-2 --file-name "%3 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# merged volumes use %4 as volume and %5 as chapter range
+mdx dl -m -v 1 --file-name "%3 vol.%4 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
 # specify translation
 mdx dl -t "Black Cat" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 

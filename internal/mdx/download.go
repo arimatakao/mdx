@@ -21,46 +21,48 @@ var (
 )
 
 type dlParam struct {
-	mangaInfo      mangadexapi.MangaInfo
-	chapters       []mangadexapi.ChapterFullInfo
-	lowestChapter  int
-	highestChapter int
-	lowestVolume   int
-	highestVolume  int
-	chaptersRange  string
-	volumesRange   string
-	language       string
-	translateGroup string
-	outputDir      string
-	outputExt      string
-	isJpg          bool
-	isMerge        bool
-	isVolume       bool
-	isAll          bool
-	isLast         bool
+	mangaInfo        mangadexapi.MangaInfo
+	chapters         []mangadexapi.ChapterFullInfo
+	lowestChapter    int
+	highestChapter   int
+	lowestVolume     int
+	highestVolume    int
+	chaptersRange    string
+	volumesRange     string
+	language         string
+	translateGroup   string
+	outputDir        string
+	outputExt        string
+	fileNameTemplate string
+	isJpg            bool
+	isMerge          bool
+	isVolume         bool
+	isAll            bool
+	isLast           bool
 }
 
 func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter, lowestVolume, highestVolume int,
-	language, translateGroup, outputDir, outputExt string, isJpg, isMerge, isVolume, isAll, isLast bool) dlParam {
+	language, translateGroup, outputDir, outputExt, fileNameTemplate string, isJpg, isMerge, isVolume, isAll, isLast bool) dlParam {
 
 	return dlParam{
-		mangaInfo:      mangadexapi.MangaInfo{},
-		chapters:       []mangadexapi.ChapterFullInfo{},
-		lowestChapter:  lowestChapter,
-		highestChapter: highestChapter,
-		lowestVolume:   lowestVolume,
-		highestVolume:  highestVolume,
-		chaptersRange:  chaptersRange,
-		volumesRange:   volumesRange,
-		language:       language,
-		translateGroup: translateGroup,
-		outputDir:      outputDir,
-		outputExt:      outputExt,
-		isJpg:          isJpg,
-		isMerge:        isMerge,
-		isVolume:       isVolume,
-		isAll:          isAll,
-		isLast:         isLast,
+		mangaInfo:        mangadexapi.MangaInfo{},
+		chapters:         []mangadexapi.ChapterFullInfo{},
+		lowestChapter:    lowestChapter,
+		highestChapter:   highestChapter,
+		lowestVolume:     lowestVolume,
+		highestVolume:    highestVolume,
+		chaptersRange:    chaptersRange,
+		volumesRange:     volumesRange,
+		language:         language,
+		translateGroup:   translateGroup,
+		outputDir:        outputDir,
+		outputExt:        outputExt,
+		fileNameTemplate: fileNameTemplate,
+		isJpg:            isJpg,
+		isMerge:          isMerge,
+		isVolume:         isVolume,
+		isAll:            isAll,
+		isLast:           isLast,
 	}
 }
 
@@ -277,8 +279,7 @@ func (p dlParam) downloadMergeVolumes() {
 		startChapter := minChapter(volumeChaptersRange)
 		endChapter := maxChapter(volumeChaptersRange)
 		chaptersRange := startChapter + "-" + endChapter
-		filename := pterm.Sprintf("[%s] %s | vol. %s | ch. %s",
-			p.language, p.mangaInfo.Title("en"), volumeId, chaptersRange)
+		filename := p.volumeFileName(volumeId, chaptersRange)
 
 		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
@@ -316,8 +317,7 @@ func (p dlParam) downloadMergeChapters() {
 		chaptersRange += "-" + p.chapters[len(p.chapters)-1].Number()
 	}
 
-	filename := pterm.Sprintf("[%s %s] %s ch. %s",
-		p.language, p.chapters[0].Translator(), p.mangaInfo.Title("en"), chaptersRange)
+	filename := p.mergeChaptersFileName(chaptersRange)
 
 	spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
@@ -348,9 +348,7 @@ func (p dlParam) downloadChapters() {
 			os.Exit(1)
 		}
 
-		filename := pterm.Sprintf("[%s %s] %s vol. %s ch. %s",
-			p.language, chapter.Translator(), p.mangaInfo.Title("en"), chapter.Volume(),
-			chapter.Number())
+		filename := p.chapterFileName(chapter)
 
 		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 

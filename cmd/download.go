@@ -32,6 +32,7 @@ var (
 	highestVolume     int
 	isMergeChapters   bool
 	outputExt         string
+	fileNameTemplate  string
 	isLastChapter     bool
 	isAllChapters     bool
 	isVolume          bool
@@ -49,6 +50,8 @@ func init() {
 		"ext", "e", "pdf", "choose output file format: pdf cbz epub dir")
 	downloadCmd.Flags().StringVarP(&outputDir,
 		"output", "o", ".", "specify output directory for file")
+	downloadCmd.Flags().StringVar(&fileNameTemplate,
+		"file-name", "", "specify output file name template: %1 language, %2 translator, %3 manga title, %4 volume, %5 chapter/range, %6 chapter title")
 	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
 	downloadCmd.Flags().StringVarP(&translateGroup,
@@ -169,7 +172,7 @@ func parseRange(rangeStr string) (low, high int) {
 func downloadManga(cmd *cobra.Command, args []string) {
 	params := mdx.NewDownloadParam(
 		chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume,
-		language, translateGroup, outputDir, outputExt,
+		language, translateGroup, outputDir, outputExt, fileNameTemplate,
 		isJpgFileFormat, isMergeChapters, isVolume, isAllChapters, isLastChapter)
 
 	if isInteractiveMode {
