@@ -16,13 +16,13 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Features 💫
 
 - Works on ***Windows, MacOS, Linux, Android***.
+- Saves manga in ***CBZ, PDF, EPUB formats*** or as a simple ***folder of images***.
 - No dependencies required: distributed as a ***single small executable file*** with easy installation scripts for ***Windows, macOS, and Linux***.
 - Works without a ***MangaDex account***.
 - ***Interactive downloading mode*** for convenient use.
-- Supports downloading chapters by ***language and translation group***.
 - Downloads ***multiple chapters with a single command***.
-- Saves manga in ***CBZ, PDF, EPUB formats*** or as a simple ***folder of images***.
 - Saves multiple chapters in ***one file***.
+- Supports downloading chapters by ***language and translation group***.
 - Automatically generates metadata for downloaded files, ***adapted for e-readers***.
 - Searches manga.
 - Displays information about manga.
@@ -30,37 +30,6 @@ mdx is a simple CLI application for downloading manga from the [MangaDex website
 ## Installation ⚙️
 
 **Download the latest release [HERE](https://github.com/arimatakao/mdx/releases)**
-
-### Windows (recommended)
-
-Install automatically with PowerShell script:
-
-```powershell
-powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/arimatakao/mdx/main/install.ps1 | iex"
-```
-
-Or download `mdx-*-windows-installer.msi` and run this command in `cmd`:
-
-```bat
-msiexec /i "C:\path\to\mdx-...-windows-installer.msi"
-```
-
-Note: **Administrator permission may be required.**
-
-### MacOS
-
-Install with the script (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
-```
-
-Or download the macOS archive (`mdx_*_darwin_*.tar.gz`) and run:
-
-```sh
-tar -xzf mdx_*_darwin_*.tar.gz
-./mdx --help
-```
 
 ### Linux
 
@@ -101,6 +70,39 @@ Arch Linux (`mdx_*_linux_*.pkg.tar.zst`):
 ```sh
 sudo pacman -U ./mdx_*_linux_*.pkg.tar.zst
 ```
+
+### MacOS
+
+Install with the script (adds `mdx` to `~/.local/bin`, no sudo; if needed, also appends it to your shell `PATH`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/arimatakao/mdx/main/install.sh | bash
+```
+
+Or download the macOS archive (`mdx_*_darwin_*.tar.gz`) and run:
+
+```sh
+tar -xzf mdx_*_darwin_*.tar.gz
+./mdx --help
+```
+
+### Windows
+
+Install automatically with PowerShell script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/arimatakao/mdx/main/install.ps1 | iex"
+```
+
+Or download `mdx-*-windows-installer.msi` and run this command in `cmd`:
+
+```bat
+msiexec /i "C:\path\to\mdx-...-windows-installer.msi"
+```
+
+Note: **Administrator permission may be required.**
+
+If installation or running `mdx.exe` fails, see [Why can't I install or run mdx on Windows?](#why-cant-i-install-or-run-mdx-on-windows).
 
 ### Portable binaries
 
@@ -387,6 +389,10 @@ mdx dl https://mangadex.org/chapter/abc-123-abc
 ```
 
 **Remember:** mdx can only download chapters from MangaDex.
+
+#### Why can't I install or run mdx on Windows?
+
+This may happen because of an issue with the [signed `.exe` file](https://en.wikipedia.org/wiki/Code_signing). If the installer does not work, download the Windows `.zip` archive manually from the [Releases page](https://github.com/arimatakao/mdx/releases), extract it, and run `mdx.exe` from the extracted folder.
 
 #### Why is downloading so slow?
 
