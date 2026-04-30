@@ -298,6 +298,8 @@ mdx dl -o your/dir mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 mdx dl --file-name "%3 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # include custom static text
 mdx dl --file-name "YourTextHere ch. %5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# use file name template with interactive mode
+mdx dl -i --file-name "%3 ch.%5"
 # include volume number
 mdx dl --file-name "%3 vol.%4 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 # include language and translator
