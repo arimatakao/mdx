@@ -64,7 +64,7 @@ func NewContainer(extension string) (Container, error) {
 }
 
 func safeOutputPath(outputDir, outputFileName, extension string) string {
-	outputFileName = safeOutputName(outputFileName)
+	outputFileName = SafeOutputName(outputFileName)
 
 	outputPath := filepath.Join(outputDir, outputFileName+"."+extension)
 
@@ -80,7 +80,7 @@ func safeOutputPath(outputDir, outputFileName, extension string) string {
 }
 
 func safeOutputDirPath(outputDir, outputFileName string) string {
-	outputFileName = safeOutputName(outputFileName)
+	outputFileName = SafeOutputName(outputFileName)
 
 	outputPath := filepath.Join(outputDir, outputFileName)
 
@@ -95,7 +95,9 @@ func safeOutputDirPath(outputDir, outputFileName string) string {
 	return outputPath
 }
 
-func safeOutputName(outputFileName string) string {
+// SafeOutputName replaces path separators and characters that are invalid in
+// common output file systems while preserving a single file or directory name.
+func SafeOutputName(outputFileName string) string {
 	// unix
 	outputFileName = strings.ReplaceAll(outputFileName, "/", "_")
 	outputFileName = strings.ReplaceAll(outputFileName, `\`, "_")
@@ -107,5 +109,8 @@ func safeOutputName(outputFileName string) string {
 	outputFileName = strings.ReplaceAll(outputFileName, "?", "_")
 	outputFileName = strings.ReplaceAll(outputFileName, "*", "_")
 	outputFileName = strings.ReplaceAll(outputFileName, "|", "-")
+	if outputFileName == "" || outputFileName == "." || outputFileName == ".." {
+		return "_"
+	}
 	return outputFileName
 }

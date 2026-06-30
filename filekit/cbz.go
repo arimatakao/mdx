@@ -36,6 +36,10 @@ func newCBZArchive() (*cbzArchive, error) {
 // ALWAYS close archive after all operations
 func (c *cbzArchive) WriteOnDiskAndClose(outputDir, outputFileName string,
 	m metadata.Metadata, chapterRange string) error {
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return err
+	}
+
 	// ComicBookInfo metadata
 	comment, err := json.Marshal(m.CBI)
 	if err != nil {

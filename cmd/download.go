@@ -37,6 +37,7 @@ var (
 	isAllChapters     bool
 	isVolume          bool
 	isInteractiveMode bool
+	withSubdir        bool
 )
 
 func init() {
@@ -52,6 +53,8 @@ func init() {
 		"output", "o", ".", "specify output directory for file")
 	downloadCmd.Flags().StringVar(&fileNameTemplate,
 		"file-name", "", "specify output file name template: %1 language, %2 translator, %3 manga title, %4 volume, %5 chapter/range, %6 chapter title")
+	downloadCmd.Flags().BoolVar(&withSubdir,
+		"with-subdir", false, "use the file name as a parent directory and save chapters in automatically named subdirectories")
 	downloadCmd.Flags().StringVarP(&language,
 		"language", "l", "en", "specify language")
 	downloadCmd.Flags().StringVarP(&translateGroup,
@@ -173,7 +176,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 	params := mdx.NewDownloadParam(
 		chaptersRange, volumesRange, lowestChapter, highestChapter, lowestVolume, highestVolume,
 		language, translateGroup, outputDir, outputExt, fileNameTemplate,
-		isJpgFileFormat, isMergeChapters, isVolume, isAllChapters, isLastChapter)
+		isJpgFileFormat, isMergeChapters, isVolume, isAllChapters, isLastChapter, withSubdir)
 
 	if isInteractiveMode {
 		params.RunInteractiveDownload()

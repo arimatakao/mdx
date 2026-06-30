@@ -39,10 +39,11 @@ type dlParam struct {
 	isVolume         bool
 	isAll            bool
 	isLast           bool
+	withSubdir       bool
 }
 
 func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter, lowestVolume, highestVolume int,
-	language, translateGroup, outputDir, outputExt, fileNameTemplate string, isJpg, isMerge, isVolume, isAll, isLast bool) dlParam {
+	language, translateGroup, outputDir, outputExt, fileNameTemplate string, isJpg, isMerge, isVolume, isAll, isLast, withSubdir bool) dlParam {
 
 	return dlParam{
 		mangaInfo:        mangadexapi.MangaInfo{},
@@ -63,6 +64,7 @@ func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highest
 		isVolume:         isVolume,
 		isAll:            isAll,
 		isLast:           isLast,
+		withSubdir:       withSubdir,
 	}
 }
 
@@ -280,11 +282,12 @@ func (p dlParam) downloadMergeVolumes() {
 		endChapter := maxChapter(volumeChaptersRange)
 		chaptersRange := startChapter + "-" + endChapter
 		filename := p.volumeFileName(volumeId, chaptersRange)
+		outputDir, filename := p.outputLocation(filename, p.volumeSubdirName(volumeId))
 
 		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
 		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, selectedVolumeChapterMap[volumeId][0])
-		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
+		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, "")
 		if err != nil {
 
 			spinnerSave.Fail("File not saved")
@@ -318,11 +321,12 @@ func (p dlParam) downloadMergeChapters() {
 	}
 
 	filename := p.mergeChaptersFileName(chaptersRange)
+	outputDir, filename := p.outputLocation(filename, p.mergeChaptersSubdirName(chaptersRange))
 
 	spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
 	metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, p.chapters[0])
-	err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, p.chaptersRange)
+	err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, p.chaptersRange)
 	if err != nil {
 		spinnerSave.Fail("File not saved")
 		e.Printf("While saving %s on disk: %v\n", filename, err)
@@ -349,11 +353,12 @@ func (p dlParam) downloadChapters() {
 		}
 
 		filename := p.chapterFileName(chapter)
+		outputDir, filename := p.outputLocation(filename, p.chapterSubdirName(chapter))
 
 		spinnerSave, _ := pterm.DefaultSpinner.Start("Saving file " + filename)
 
 		metaInfo := metadata.NewMetadata(app.USER_AGENT, p.mangaInfo, chapter)
-		err = containerFile.WriteOnDiskAndClose(p.outputDir, filename, metaInfo, "")
+		err = containerFile.WriteOnDiskAndClose(outputDir, filename, metaInfo, "")
 		if err != nil {
 			spinnerSave.Fail("File not saved")
 			e.Printf("While saving %s on disk: %v\n", filename, err)

@@ -1,9 +1,11 @@
 package mdx
 
 import (
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/arimatakao/mdx/filekit"
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
 )
@@ -64,4 +66,24 @@ func formatFileNameTemplate(template string, fields []string) string {
 		fileName = strings.ReplaceAll(fileName, "%"+strconv.Itoa(i), fields[i-1])
 	}
 	return strings.TrimSpace(fileName)
+}
+
+func (p dlParam) outputLocation(parentName, outputName string) (string, string) {
+	if !p.withSubdir {
+		return p.outputDir, parentName
+	}
+
+	return filepath.Join(p.outputDir, filekit.SafeOutputName(parentName)), outputName
+}
+
+func (p dlParam) chapterSubdirName(chapter mangadexapi.ChapterFullInfo) string {
+	return chapter.Number()
+}
+
+func (p dlParam) mergeChaptersSubdirName(chaptersRange string) string {
+	return chaptersRange
+}
+
+func (p dlParam) volumeSubdirName(volume string) string {
+	return pterm.Sprintf("vol.%s", volume)
 }
