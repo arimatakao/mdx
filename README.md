@@ -242,40 +242,44 @@ Demo of interactive mode:
 
 </div>
 
-
-Download manga:
+Basic download commands:
 
 ```sh
 # get help
 mdx download --help
 
-# by default 1 chapter is being downloaded
-mdx download -u https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370/this-gorilla-will-die-in-1-day
-# or
-mdx dl -u https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370/this-gorilla-will-die-in-1-day
-# or
-mdx dl https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
-# or
+# download the first chapter (CBZ by default)
 mdx dl mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
-# download pdf format instead of cbz
+# download a specific chapter or a range of chapters
+mdx dl -c 3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+mdx dl -c 1-3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
+# download a chapter using its direct link
+mdx dl mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
+
+# download as PDF or EPUB instead of CBZ
 mdx dl -e pdf mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
-# or epub format
 mdx dl -e epub mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
+# specify the output directory
+mdx dl -o your/dir mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
+# specify the language (English by default)
+mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+```
+
+<details>
+<summary>Advanced download commands</summary>
+
+```sh
 # download all chapters
 # i don't recommend using this flag - https://github.com/arimatakao/mdx?tab=readme-ov-file#getting-error-while-getting-manga-chapters-request-is-failed-i-cant-download-anything-why
 mdx dl -a mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
-# download a specific chapter
-mdx dl -c 3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
-# or set direct link to the chapter
-mdx dl --this mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
-# or
-mdx dl https://mangadex.org/chapter/7c5d2aea-ea55-47d9-8c65-a33c9e92df70
-
-# download a range of chapters
-mdx dl -c 1-3 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# download a decimal chapter or a range with decimal chapter numbers
+mdx dl -c 16.5 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+mdx dl -c 16-22.5 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download 1 volume of manga
 mdx dl -v 1 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
@@ -288,12 +292,6 @@ mdx dl -m -v 1 mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download last chapter
 mdx dl --last mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
-
-# specify language, default is english (to get the available languages, execute the info subcommand)
-mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
-
-# specify the output directory
-mdx dl -o your/dir mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # specify output file name template
 # %1 language, %2 translator, %3 manga title, %4 volume, %5 chapter/range, %6 chapter title
@@ -313,12 +311,24 @@ mdx dl -m -c 1-2 --file-name "%3 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2
 # merged volumes use %4 as volume and %5 as chapter range
 mdx dl -m -v 1 --file-name "%3 vol.%4 ch.%5" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
+# use the file name template as a parent directory
+# this creates: "Manga title/1/01.png", "Manga title/1/02.png", etc.
+mdx dl -e dir --with-subdir --file-name "%3" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# other output formats are saved in the same structure, for example: "Manga title/1.cbz"
+mdx dl -e cbz --with-subdir --file-name "%3" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# merged chapters use the chapter range as the nested file name: "Manga title/1-3.cbz"
+mdx dl -e cbz -m -c 1-3 --with-subdir --file-name "%3" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+# merged volumes use the volume number as the nested file name: "Manga title/vol.1.cbz"
+mdx dl -e cbz -m -v 1 --with-subdir --file-name "%3" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
 # specify translation
 mdx dl -t "Black Cat" mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 
 # download compressed version (lower image quality and file size)
 mdx dl -j mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 ```
+
+</details>
 
 Check available updates:
 
