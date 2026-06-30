@@ -113,7 +113,7 @@ func (l ResponseChapterList) GetAllChapters(transgp string) []Chapter {
 	return found
 }
 
-func (l ResponseChapterList) GetChapters(lowest, highest int, transgp string) ([]Chapter, int) {
+func (l ResponseChapterList) GetChapters(lowest, highest float64, transgp string) ([]Chapter, int) {
 	if len(l.Data) == 0 {
 		return []Chapter{}, 0
 	}
@@ -126,31 +126,9 @@ func (l ResponseChapterList) GetChapters(lowest, highest int, transgp string) ([
 			continue
 		}
 
-		num, err := strconv.Atoi(chapter.Number())
-		if err == nil {
-			if num >= lowest &&
-				num <= highest &&
-				chapter.isTranslatedByGroup(transgp) {
-				if len(found) != 0 {
-					if found[len(found)-1].Number() == chapter.Number() {
-						continue
-					}
-				}
-
-				found = append(found, chapter)
-			}
-			continue
-		}
-
-		countExtraChapters += 1
-
-		nums := strings.Split(chapter.Attributes.Chapter, ".")
-		if len(nums) != 2 {
-			continue
-		}
-
-		num, err = strconv.Atoi(nums[0])
+		num, err := strconv.ParseFloat(chapter.Number(), 64)
 		if err != nil {
+			countExtraChapters++
 			continue
 		}
 

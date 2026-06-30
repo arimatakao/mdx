@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -26,8 +27,8 @@ var (
 	translateGroup    string
 	volumesRange      string
 	chaptersRange     string
-	lowestChapter     int
-	highestChapter    int
+	lowestChapter     float64
+	highestChapter    float64
 	lowestVolume      int
 	highestVolume     int
 	isMergeChapters   bool
@@ -129,9 +130,35 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	}
 
 	if chaptersRange != "" {
-		lowestChapter, highestChapter = parseRange(chaptersRange)
+		lowestChapter, highestChapter = parseChapterRange(chaptersRange)
 		return
 	}
+}
+
+func parseChapterRange(rangeStr string) (low, high float64) {
+	errorMsg := pterm.Sprintf("Malformatted downloading range format %s", rangeStr)
+	nums := strings.Split(rangeStr, "-")
+	if len(nums) < 1 || len(nums) > 2 {
+		e.Println(errorMsg)
+		os.Exit(0)
+	}
+
+	low, err := strconv.ParseFloat(nums[0], 64)
+	if err != nil || math.IsNaN(low) || math.IsInf(low, 0) || low < 0 {
+		e.Println(errorMsg)
+		os.Exit(0)
+	}
+
+	high = low
+	if len(nums) == 2 {
+		high, err = strconv.ParseFloat(nums[1], 64)
+		if err != nil || math.IsNaN(high) || math.IsInf(high, 0) || low >= high {
+			e.Println(errorMsg)
+			os.Exit(0)
+		}
+	}
+
+	return low, high
 }
 
 func parseRange(rangeStr string) (low, high int) {

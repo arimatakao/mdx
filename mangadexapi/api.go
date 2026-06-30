@@ -418,7 +418,7 @@ func (a Clientapi) GetChapterImagesInFullInfo(chap Chapter) (ChapterFullInfo, er
 // - []ChapterFullInfo: a slice of ChapterFullInfo structs containing the full information of the chapters.
 // - error: an error if there was a problem retrieving the information.
 func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup string,
-	lowestChapter, highestChapter int) ([]ChapterFullInfo, error) {
+	lowestChapter, highestChapter float64) ([]ChapterFullInfo, error) {
 
 	if mangaId == "" ||
 		language == "" ||
@@ -432,8 +432,8 @@ func (a Clientapi) GetFullChaptersInfo(mangaId, language, translationGroup strin
 	chapters := []Chapter{}
 	chaptersInfo := []ChapterFullInfo{}
 
-	lowBound := (lowestChapter / 10) * 10
-	highBound := ((highestChapter + 11) / 10) * 10
+	lowBound := int(lowestChapter/10) * 10
+	highBound := int((highestChapter+11)/10) * 10
 
 	for lowBound <= highBound {
 		query := pterm.Sprintf(
@@ -605,7 +605,7 @@ func (a Clientapi) GetAllChaptersInfo(mangaId, language, translationGroup string
 		c := list.GetAllChapters(translationGroup)
 		chapters = append(chapters, c...)
 
-		if len(c) == 0 {
+		if len(list.Data) == 0 {
 			isNotEmptyList = false
 		}
 		offset += limit
@@ -662,7 +662,7 @@ func (a Clientapi) GetAllFullChaptersInfo(mangaId, language,
 		c := list.GetAllChapters(translationGroup)
 		chapters = append(chapters, c...)
 
-		if len(c) == 0 {
+		if len(list.Data) == 0 {
 			isNotEmptyList = false
 		}
 		offset += limit

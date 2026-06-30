@@ -23,8 +23,8 @@ var (
 type dlParam struct {
 	mangaInfo        mangadexapi.MangaInfo
 	chapters         []mangadexapi.ChapterFullInfo
-	lowestChapter    int
-	highestChapter   int
+	lowestChapter    float64
+	highestChapter   float64
 	lowestVolume     int
 	highestVolume    int
 	chaptersRange    string
@@ -42,7 +42,7 @@ type dlParam struct {
 	withSubdir       bool
 }
 
-func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter, lowestVolume, highestVolume int,
+func NewDownloadParam(chaptersRange, volumesRange string, lowestChapter, highestChapter float64, lowestVolume, highestVolume int,
 	language, translateGroup, outputDir, outputExt, fileNameTemplate string, isJpg, isMerge, isVolume, isAll, isLast, withSubdir bool) dlParam {
 
 	return dlParam{
@@ -130,7 +130,7 @@ func (p *dlParam) filterChapters(chapters []mangadexapi.Chapter) []mangadexapi.C
 
 	if p.highestChapter == p.lowestChapter {
 		for _, c := range chapters {
-			chapterNum, err := strconv.Atoi(c.Number())
+			chapterNum, err := strconv.ParseFloat(c.Number(), 64)
 			if err != nil {
 				continue
 			}
@@ -143,7 +143,7 @@ func (p *dlParam) filterChapters(chapters []mangadexapi.Chapter) []mangadexapi.C
 		}
 	} else {
 		for _, c := range chapters {
-			chapterNum, err := strconv.Atoi(c.Number())
+			chapterNum, err := strconv.ParseFloat(c.Number(), 64)
 			if err != nil {
 				continue
 			}
