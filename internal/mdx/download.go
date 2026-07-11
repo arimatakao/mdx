@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/arimatakao/comicfile"
+	"github.com/arimatakao/comicfile/metadata"
 	"github.com/arimatakao/mdx/app"
-	"github.com/arimatakao/mdx/filekit"
-	"github.com/arimatakao/mdx/filekit/metadata"
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
 )
@@ -252,7 +252,7 @@ func (p dlParam) flexDownloadChapters() {
 
 func (p dlParam) downloadMergeVolumes() {
 	for volumeId, volume := range selectedVolumeChapterMap {
-		containerFile, err := filekit.NewContainer(p.outputExt)
+		containerFile, err := comicfile.NewContainer(p.outputExt)
 		if err != nil {
 			e.Printf("While creating output file: %v\n", err)
 			os.Exit(1)
@@ -299,7 +299,7 @@ func (p dlParam) downloadMergeVolumes() {
 }
 
 func (p dlParam) downloadMergeChapters() {
-	containerFile, err := filekit.NewContainer(p.outputExt)
+	containerFile, err := comicfile.NewContainer(p.outputExt)
 	if err != nil {
 		e.Printf("While creating output file: %v\n", err)
 		os.Exit(1)
@@ -340,7 +340,7 @@ func (p dlParam) downloadChapters() {
 	for _, chapter := range p.chapters {
 		printChapterInfo(chapter)
 
-		containerFile, err := filekit.NewContainer(p.outputExt)
+		containerFile, err := comicfile.NewContainer(p.outputExt)
 		if err != nil {
 			e.Printf("While creating output file: %v\n", err)
 			os.Exit(1)
@@ -369,7 +369,7 @@ func (p dlParam) downloadChapters() {
 	}
 }
 
-func (p dlParam) downloadProcess(outputFile filekit.Container,
+func (p dlParam) downloadProcess(outputFile comicfile.ContainerWriter,
 	chapter mangadexapi.ChapterFullInfo) error {
 	if len(p.chapters) == 0 {
 		return ErrEmptyChapters
@@ -407,7 +407,7 @@ func (p dlParam) downloadProcess(outputFile filekit.Container,
 			imgExt = "jpg"
 		}
 
-		if err := outputFile.AddFile(imgExt, outputImage); err != nil {
+		if err := outputFile.AddPage(imgExt, outputImage); err != nil {
 			dlbar.WithBarStyle(pterm.NewStyle(pterm.FgRed)).
 				UpdateTitle("Failed downloading").Stop()
 			return err
@@ -465,19 +465,19 @@ func getChapterNumsFromOptions(options []string) []string {
 
 func toSavingOptions(isVolume bool) []string {
 	options := []string{}
-	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 1, filekit.CBZ_EXT))
-	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 2, filekit.PDF_EXT))
-	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 3, filekit.EPUB_EXT))
-	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 4, filekit.DIR_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 1, comicfile.CBZ_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 2, comicfile.PDF_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 3, comicfile.EPUB_EXT))
+	options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 4, comicfile.DIR_EXT))
 	if !isVolume {
 		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 5,
-			filekit.CBZ_EXT+" + merge chapters in one file"))
+			comicfile.CBZ_EXT+" + merge chapters in one file"))
 		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 6,
-			filekit.PDF_EXT+" + merge chapters in one file"))
+			comicfile.PDF_EXT+" + merge chapters in one file"))
 		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 7,
-			filekit.EPUB_EXT+" + merge chapters in one file"))
+			comicfile.EPUB_EXT+" + merge chapters in one file"))
 		options = append(options, pterm.Sprintf(OPTION_SAVING_TEMPLATE, 8,
-			filekit.DIR_EXT+" + merge chapters in one file"))
+			comicfile.DIR_EXT+" + merge chapters in one file"))
 	}
 	return options
 }
@@ -495,23 +495,23 @@ func getSavingOption(option string) (string, bool) {
 	dp.Println(num)
 	switch num {
 	case 1:
-		return filekit.CBZ_EXT, false
+		return comicfile.CBZ_EXT, false
 	case 2:
-		return filekit.PDF_EXT, false
+		return comicfile.PDF_EXT, false
 	case 3:
-		return filekit.EPUB_EXT, false
+		return comicfile.EPUB_EXT, false
 	case 4:
-		return filekit.DIR_EXT, false
+		return comicfile.DIR_EXT, false
 	case 5:
-		return filekit.CBZ_EXT, true
+		return comicfile.CBZ_EXT, true
 	case 6:
-		return filekit.PDF_EXT, true
+		return comicfile.PDF_EXT, true
 	case 7:
-		return filekit.EPUB_EXT, true
+		return comicfile.EPUB_EXT, true
 	case 8:
-		return filekit.DIR_EXT, true
+		return comicfile.DIR_EXT, true
 	default:
-		return filekit.CBZ_EXT, false
+		return comicfile.CBZ_EXT, false
 	}
 }
 

@@ -457,7 +457,7 @@ Sometimes it doesn't download because of some problems on the MangaDex side. Jus
 - [ ] Add tests for `mangadexapi` package.
 - [ ] Refactor `internal/mdx` package.
 - [ ] Refactor `mangadexapi` package.
-- [ ] Refactor `filekit` package.
+- [X] Replace `filekit` with `comicfile` package.
 
 ## License 📜
 

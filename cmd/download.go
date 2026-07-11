@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/arimatakao/mdx/filekit"
+	"github.com/arimatakao/comicfile"
 	"github.com/arimatakao/mdx/internal/mdx"
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
@@ -114,7 +114,7 @@ func checkDownloadArgs(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	if filekit.IsNotSupported(outputExt) {
+	if comicfile.IsNotSupported(outputExt) {
 		e.Printfln("%s format of file is not supported", outputExt)
 		os.Exit(0)
 	}

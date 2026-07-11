@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/arimatakao/mdx/filekit"
 	"github.com/arimatakao/mdx/mangadexapi"
 	"github.com/pterm/pterm"
 )
@@ -73,7 +72,20 @@ func (p dlParam) outputLocation(parentName, outputName string) (string, string) 
 		return p.outputDir, parentName
 	}
 
-	return filepath.Join(p.outputDir, filekit.SafeOutputName(parentName)), outputName
+	return filepath.Join(p.outputDir, safeOutputName(parentName)), outputName
+}
+
+func safeOutputName(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "_", `\\`, "_",
+		"<", "_", ">", "_", ":", "_", `"`, "_",
+		"?", "_", "*", "_", "|", "-",
+	)
+	name = replacer.Replace(name)
+	if name == "" || name == "." || name == ".." {
+		return "_"
+	}
+	return name
 }
 
 func (p dlParam) chapterSubdirName(chapter mangadexapi.ChapterFullInfo) string {

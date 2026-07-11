@@ -48,14 +48,6 @@ func printMangaInfo(i mangadexapi.MangaInfo) {
 	dp.Println(field.Sprint("Read or Buy here:\n"), i.Links())
 }
 
-func printShortMangaInfo(i mangadexapi.MangaInfo) {
-	dp.Println(field.Sprint("Manga title: "), i.Title("en"))
-	dp.Println(field.Sprint("Alt titles: "), i.AltTitles())
-	field.Println("Read or Buy here:")
-	dp.Println(i.Links())
-	dp.Printf("==============\n\n")
-}
-
 func printChapterInfo(c mangadexapi.ChapterFullInfo) {
 	tableData := pterm.TableData{
 		{field.Sprint("Chapter"), dp.Sprint(c.Number())},
