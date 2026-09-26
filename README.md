@@ -273,6 +273,9 @@ mdx dl -l it mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
 <summary>Advanced download commands</summary>
 
 ```sh
+# skip the search by supplying a MangaDex manga URL
+mdx dl -i https://mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370
+
 # download all chapters
 # i don't recommend using this flag - https://github.com/arimatakao/mdx?tab=readme-ov-file#getting-error-while-getting-manga-chapters-request-is-failed-i-cant-download-anything-why
 mdx dl -a mangadex.org/title/a3f91d0b-02f5-4a3d-a2d0-f0bde7152370

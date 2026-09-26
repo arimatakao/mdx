@@ -515,54 +515,14 @@ func getSavingOption(option string) (string, bool) {
 	}
 }
 
-func (p dlParam) RunInteractiveDownload() {
+func (p dlParam) RunInteractiveDownload(mangaID string) {
 	cols, rows := getTerminalSize()
 	p.isVolume = false
 
-	foundManga := []string{}
-	associationMangaIdNums := make(map[string]string)
-	for isSearching := true; isSearching; {
-		clearOutput()
-		searchTitle, _ := pterm.DefaultInteractiveTextInput.
-			WithTextStyle(field).Show("Search manga")
-
-		searchResult := []mangadexapi.MangaInfo{}
-
-		for offset := 0; ; offset += 50 {
-			mangaList, err := client.Find(searchTitle, 50, offset, true)
-			if err != nil {
-				e.Printfln("%v", err)
-				os.Exit(1)
-			}
-
-			if len(mangaList.Data) == 0 {
-				break
-			}
-
-			searchResult = append(searchResult, mangaList.List()...)
-		}
-
-		if len(searchResult) == 0 {
-			isContinue, _ := pterm.DefaultInteractiveConfirm.
-				Show("Manga not found, try again?")
-			isSearching = isContinue
-			continue
-		}
-
-		isSearching = false
-		printOptions, associationNums := toMangaInfoOptions(searchResult, cols)
-		maps.Copy(associationMangaIdNums, associationNums)
-		foundManga = append(foundManga, printOptions...)
-	}
-
 	mangaInfo := mangadexapi.MangaInfo{}
-	for isSelected := false; !isSelected; {
+	if mangaID != "" {
 		clearOutput()
-		mangaOption, _ := pterm.DefaultInteractiveSelect.WithOptions(foundManga).
-			WithMaxHeight(rows - 2).Show("Select manga from list")
-		mangaId := associationMangaIdNums[getMangaNumOption(mangaOption)]
-
-		respMangaInfo, err := client.GetMangaInfo(mangaId)
+		respMangaInfo, err := client.GetMangaInfo(mangaID)
 		if err != nil {
 			e.Printfln("%v", err)
 			os.Exit(1)
@@ -570,9 +530,66 @@ func (p dlParam) RunInteractiveDownload() {
 
 		printMangaInfo(respMangaInfo.Data)
 
-		isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct manga?")
-		if isSelected {
-			mangaInfo = respMangaInfo.Data
+		isSelected, _ := pterm.DefaultInteractiveConfirm.Show("Is correct manga?")
+		if !isSelected {
+			return
+		}
+		mangaInfo = respMangaInfo.Data
+	} else {
+		foundManga := []string{}
+		associationMangaIdNums := make(map[string]string)
+		for isSearching := true; isSearching; {
+			clearOutput()
+			searchTitle, _ := pterm.DefaultInteractiveTextInput.
+				WithTextStyle(field).Show("Search manga")
+
+			searchResult := []mangadexapi.MangaInfo{}
+
+			for offset := 0; ; offset += 50 {
+				mangaList, err := client.Find(searchTitle, 50, offset, true)
+				if err != nil {
+					e.Printfln("%v", err)
+					os.Exit(1)
+				}
+
+				if len(mangaList.Data) == 0 {
+					break
+				}
+
+				searchResult = append(searchResult, mangaList.List()...)
+			}
+
+			if len(searchResult) == 0 {
+				isContinue, _ := pterm.DefaultInteractiveConfirm.
+					Show("Manga not found, try again?")
+				isSearching = isContinue
+				continue
+			}
+
+			isSearching = false
+			printOptions, associationNums := toMangaInfoOptions(searchResult, cols)
+			maps.Copy(associationMangaIdNums, associationNums)
+			foundManga = append(foundManga, printOptions...)
+		}
+
+		for isSelected := false; !isSelected; {
+			clearOutput()
+			mangaOption, _ := pterm.DefaultInteractiveSelect.WithOptions(foundManga).
+				WithMaxHeight(rows - 2).Show("Select manga from list")
+			mangaID := associationMangaIdNums[getMangaNumOption(mangaOption)]
+
+			respMangaInfo, err := client.GetMangaInfo(mangaID)
+			if err != nil {
+				e.Printfln("%v", err)
+				os.Exit(1)
+			}
+
+			printMangaInfo(respMangaInfo.Data)
+
+			isSelected, _ = pterm.DefaultInteractiveConfirm.Show("Is correct manga?")
+			if isSelected {
+				mangaInfo = respMangaInfo.Data
+			}
 		}
 	}
 	p.mangaInfo = mangaInfo

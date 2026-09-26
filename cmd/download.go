@@ -79,6 +79,18 @@ func init() {
 func checkDownloadArgs(cmd *cobra.Command, args []string) {
 	urlErrorMessage := "Malformatted URL."
 	if isInteractiveMode {
+		// Interactive mode normally starts with a title search. When a manga URL is
+		// supplied, retain its ID so the interactive flow can start at confirmation.
+		if mangaUrl != "" {
+			mangaId = mangadexapi.GetMangaIdFromUrl(mangaUrl)
+		} else if len(args) > 0 {
+			mangaId = mangadexapi.GetMangaIdFromArgs(args)
+		}
+
+		if (mangaUrl != "" || len(args) > 0) && mangaId == "" {
+			e.Println(urlErrorMessage)
+			os.Exit(0)
+		}
 		return
 	}
 
@@ -206,7 +218,7 @@ func downloadManga(cmd *cobra.Command, args []string) {
 		isJpgFileFormat, isMergeChapters, isVolume, isAllChapters, isLastChapter, withSubdir)
 
 	if isInteractiveMode {
-		params.RunInteractiveDownload()
+		params.RunInteractiveDownload(mangaId)
 	} else {
 		params.RunDownload(mangaId, mangaChapterId)
 	}
